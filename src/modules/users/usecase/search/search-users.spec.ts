@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IUserRepository, PublicUser } from '../../repository/IUserRepository';
 import { buildTsQuery, SearchUsersUseCase } from './search-users.usecase';
 import { SEARCH_USERS_DEFAULT_LIMIT, SearchUsersSchema } from './search-users.schema';
-import { UserStatus } from '../../entity/user.entity';
+import { UserStatus } from '@/shared/enums/users/user-status.enum';
 
 const makeUser = (id: string): PublicUser => ({
   id,

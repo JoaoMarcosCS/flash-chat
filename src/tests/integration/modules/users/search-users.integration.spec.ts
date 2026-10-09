@@ -3,7 +3,8 @@ import supertest from 'supertest';
 import { app } from '@/infra/http/index';
 import { AppDataSource } from '@/infra/database/data-source';
 import { v7 as uuidv7 } from 'uuid';
-import { UserEntity, UserStatus } from '@/modules/users/entity/user.entity';
+import { UserEntity } from '@/modules/users/entity/user.entity';
+import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { generateTokens } from '@/modules/auth/token/token';
 
 const users = [

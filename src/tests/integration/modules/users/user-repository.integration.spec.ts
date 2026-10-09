@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { UserRepository } from '@/modules/users/repository/user.repository';
-import { UserStatus } from '@/modules/users/entity/user.entity';
+import { UserStatus } from '@/shared/enums/users/user-status.enum';
 
 const payload = {
   name: 'John Doe',

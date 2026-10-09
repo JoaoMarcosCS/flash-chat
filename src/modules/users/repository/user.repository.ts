@@ -2,7 +2,8 @@ import { Repository } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
 import { CreateUserData, FindUsersByParams, IUserRepository, PublicUser } from './IUserRepository';
 import { AppDataSource } from '@/infra/database/data-source';
-import { UserEntity, UserStatus } from '../entity/user.entity';
+import { UserEntity } from '../entity/user.entity';
+import { UserStatus } from '@/shared/enums/users/user-status.enum';
 
 const SEARCH_VECTOR = `to_tsvector('simple', coalesce(u.name, '') || ' ' || coalesce(u.nickname, ''))`;
 

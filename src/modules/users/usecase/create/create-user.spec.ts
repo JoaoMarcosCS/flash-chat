@@ -3,7 +3,7 @@ import { CreateUserData, IUserRepository, PublicUser } from '../../repository/IU
 import { CreateUserUseCase } from './create-user.usecase';
 import { CreateUserDTO, CreateUserSchema } from './create-user.schema';
 import { MessageError } from '@/shared/enums/erros.enum';
-import { UserStatus } from '../../entity/user.entity';
+import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { ILogger } from '@/infra/logger/ILogger';
 import { ConflictException } from '@/shared/errors/errors';
 import { hash } from '@/shared/utils/hash';
