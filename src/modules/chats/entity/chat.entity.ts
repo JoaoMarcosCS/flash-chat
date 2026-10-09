@@ -1,4 +1,17 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, Index, Unique, Check } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  CreateDateColumn,
+  Index,
+  Unique,
+  Check,
+  ManyToOne,
+  JoinColumn,
+  Relation,
+} from 'typeorm';
+import { UserEntity } from '@/modules/users/entity/user.entity';
+import { MessageEntity } from '@/modules/messages/entity/message.entity';
 
 @Entity('chats')
 @Unique('UQ_chats_direct_key', ['directKey'])
@@ -10,7 +23,7 @@ import { Entity, PrimaryColumn, Column, CreateDateColumn, Index, Unique, Check }
 )
 @Index('IDX_chats_search', { synchronize: false })
 export class ChatEntity {
-  @PrimaryColumn('uuid')
+  @PrimaryColumn({ type: 'uuid', primaryKeyConstraintName: 'PK_chats_id' })
   id: string;
 
   @Column({ name: 'is_group', type: 'boolean' })
@@ -25,8 +38,16 @@ export class ChatEntity {
   @Column({ name: 'created_by', type: 'uuid' })
   createdBy: string;
 
+  @ManyToOne(() => UserEntity)
+  @JoinColumn({ name: 'created_by', foreignKeyConstraintName: 'FK_chats_created_by' })
+  initiator: Relation<UserEntity>;
+
   @Column({ name: 'last_message_id', type: 'uuid', nullable: true })
   lastMessageId: string | null;
+
+  @ManyToOne(() => MessageEntity, { nullable: true })
+  @JoinColumn({ name: 'last_message_id', foreignKeyConstraintName: 'FK_chats_last_message' })
+  lastMessage: Relation<MessageEntity> | null;
 
   @Column({ name: 'last_message_content', type: 'varchar', length: 100, nullable: true })
   lastMessageContent: string | null;

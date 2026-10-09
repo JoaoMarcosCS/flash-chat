@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateChatsSearchIndex1791504000003 implements MigrationInterface {
-  name = 'CreateChatsSearchIndex1791504000003';
+export class CreateChatsSearchIndex1791514231674 implements MigrationInterface {
+  name = 'CreateChatsSearchIndex1791514231674';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
