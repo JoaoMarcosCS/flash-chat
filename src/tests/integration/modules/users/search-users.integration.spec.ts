@@ -2,29 +2,33 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import supertest from 'supertest';
 import { app } from '@/infra/http/index';
 import { AppDataSource } from '@/infra/database/data-source';
-import { UserEntity } from '@/modules/users/entity/user.entity';
+import { v7 as uuidv7 } from 'uuid';
+import { UserEntity, UserStatus } from '@/modules/users/entity/user.entity';
 import { generateTokens } from '@/modules/auth/token/token';
 
 const users = [
-  { name: 'Ana Souza', email: 'ana.souza@example.com', document: '52998224725' },
-  { name: 'Bruno Lima', email: 'bruno.lima@example.com', document: '00967468078' },
-  { name: 'Carla Souza', email: 'carla@example.com', document: '11144477735' },
-  { name: 'Daniel Costa', email: 'daniel.costa@test.com', document: '12345678909' },
-  { name: 'Eva Rocha', email: 'eva.rocha@example.com', document: '98765432100' },
+  { name: 'Ana Souza', nickname: 'ana.souza', email: 'ana.souza@example.com' },
+  { name: 'Bruno Lima', nickname: 'brunao', email: 'bruno.lima@example.com' },
+  { name: 'Carla Souza', nickname: 'carla_s', email: 'carla@example.com' },
+  { name: 'Daniel Costa', nickname: 'dcosta', email: 'daniel.costa@test.com' },
+  { name: 'Eva Rocha', nickname: 'eva.rocha', email: 'eva.rocha@example.com' },
 ];
+
+const deactivatedUser = {
+  name: 'Fábio Souza',
+  nickname: 'fabio.souza',
+  email: 'fabio@example.com',
+  status: UserStatus.DEACTIVATED,
+};
 
 const { accessToken } = generateTokens({
   id: '6f1c2b8e-1d4a-4b6e-9a3f-2c1d0e9b8a7f',
   name: 'Admin',
-  email: 'admin@example.com',
-  document: '00000000000',
+  nickname: 'admin',
 });
 
 const search = (query: Record<string, string | number> = {}) =>
-  supertest(app)
-    .get('/api/v1/users')
-    .query(query)
-    .set('Authorization', `Bearer ${accessToken}`);
+  supertest(app).get('/api/v1/users').query(query).set('Authorization', `Bearer ${accessToken}`);
 
 const names = (body: { data: UserEntity[] }) => body.data.map((user) => user.name);
 
@@ -32,7 +36,11 @@ describe('GET /api/v1/users (integração)', () => {
   beforeEach(async () => {
     const repository = AppDataSource.getRepository(UserEntity);
 
-    await repository.save(users.map((user) => repository.create({ ...user, password: 'hashed' })));
+    await repository.save(
+      [...users, deactivatedUser].map((user) =>
+        repository.create({ ...user, id: uuidv7(), password: 'hashed' }),
+      ),
+    );
   });
 
   it('should return 401 without token', async () => {
@@ -47,6 +55,7 @@ describe('GET /api/v1/users (integração)', () => {
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(users.length);
     expect(response.body.data[0]).not.toHaveProperty('password');
+    expect(response.body.data[0]).not.toHaveProperty('email');
     expect(response.body.nextCursor).toBeNull();
   });
 
@@ -66,22 +75,22 @@ describe('GET /api/v1/users (integração)', () => {
     expect([...collected].sort()).toEqual(users.map((user) => user.name).sort());
   });
 
-  it('should search by partial name', async () => {
+  it('should search by partial name ignoring deactivated users', async () => {
     const response = await search({ search: 'souz' });
 
     expect(names(response.body).sort()).toEqual(['Ana Souza', 'Carla Souza']);
   });
 
-  it('should search by e-mail', async () => {
-    const response = await search({ search: 'daniel.costa@test.com' });
+  it('should search by partial nickname', async () => {
+    const response = await search({ search: 'dcost' });
 
     expect(names(response.body)).toEqual(['Daniel Costa']);
   });
 
-  it('should search by formatted document', async () => {
-    const response = await search({ search: '009.674.680-78' });
+  it('should not search by e-mail', async () => {
+    const response = await search({ search: 'daniel.costa@test.com' });
 
-    expect(names(response.body)).toEqual(['Bruno Lima']);
+    expect(names(response.body)).toEqual([]);
   });
 
   it('should combine search and cursor pagination', async () => {

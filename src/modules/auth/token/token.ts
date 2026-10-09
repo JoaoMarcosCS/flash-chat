@@ -7,18 +7,14 @@ export type AuthTokens = {
   refreshToken: string;
 };
 
-type TokenUser = Pick<UserEntity, 'id' | 'email' | 'name' | 'document'>;
+type TokenUser = Pick<UserEntity, 'id' | 'name' | 'nickname'>;
 
 export const generateTokens = (user: TokenUser): AuthTokens => {
-  const accessToken = sign(
-    { email: user.email, name: user.name, document: user.document },
-    env.JWT_SECRET,
-    {
-      subject: user.id,
-      algorithm: 'HS256',
-      expiresIn: env.JWT_EXPIRES_IN as SignOptions['expiresIn'],
-    },
-  );
+  const accessToken = sign({ name: user.name, nickname: user.nickname }, env.JWT_SECRET, {
+    subject: user.id,
+    algorithm: 'HS256',
+    expiresIn: env.JWT_EXPIRES_IN as SignOptions['expiresIn'],
+  });
 
   const refreshToken = sign({}, env.JWT_REFRESH_SECRET, {
     subject: user.id,

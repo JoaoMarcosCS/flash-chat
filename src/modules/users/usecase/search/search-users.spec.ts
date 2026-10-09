@@ -1,17 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { IUserRepository } from '../../repository/IUserRepository';
+import { IUserRepository, PublicUser } from '../../repository/IUserRepository';
 import { buildTsQuery, SearchUsersUseCase } from './search-users.usecase';
 import { SEARCH_USERS_DEFAULT_LIMIT, SearchUsersSchema } from './search-users.schema';
-import { UserEntity } from '../../entity/user.entity';
+import { UserStatus } from '../../entity/user.entity';
 
-const makeUser = (id: string) =>
-  ({
-    id,
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    document: '00967468078',
-    status: 1,
-  }) as UserEntity;
+const makeUser = (id: string): PublicUser => ({
+  id,
+  name: 'John Doe',
+  nickname: 'john.doe',
+  status: UserStatus.ACTIVE,
+});
 
 const cursor = '6f1c2b8e-1d4a-4b6e-9a3f-2c1d0e9b8a7f';
 
@@ -19,8 +17,6 @@ const mockRepository = (): IUserRepository => ({
   findBy: vi.fn().mockResolvedValue([]),
   findByEmailWithPassword: vi.fn(),
   create: vi.fn(),
-  delete: vi.fn(),
-  update: vi.fn(),
 });
 
 describe('SearchUsersUseCase', () => {
@@ -53,7 +49,11 @@ describe('SearchUsersUseCase', () => {
   });
 
   it('should return the last id as nextCursor when there is a next page', async () => {
-    vi.mocked(repository.findBy).mockResolvedValueOnce([makeUser('c'), makeUser('b'), makeUser('a')]);
+    vi.mocked(repository.findBy).mockResolvedValueOnce([
+      makeUser('c'),
+      makeUser('b'),
+      makeUser('a'),
+    ]);
 
     const result = await useCase.execute({ limit: 2 });
 
@@ -72,8 +72,8 @@ describe('SearchUsersUseCase', () => {
 });
 
 describe('buildTsQuery', () => {
-  it('should strip document formatting', () => {
-    expect(buildTsQuery('009.674.680-78')).toBe('00967468078:*');
+  it('should keep nickname tokens intact', () => {
+    expect(buildTsQuery('John_Doe.99')).toBe('john_doe.99:*');
   });
 
   it('should remove tsquery special characters', () => {

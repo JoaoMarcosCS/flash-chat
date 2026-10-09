@@ -16,23 +16,23 @@ export class CreateUserUseCase {
   async execute(data: CreateUserDTO): Promise<PublicUser> {
     this.logger.info('Executing CreateUserUseCase', { data: { ...data, password: '***' } });
 
-    const [emailAlreadyExists, documentAlreadyExists] = await Promise.all([
+    const [emailAlreadyExists, nicknameAlreadyExists] = await Promise.all([
       this.userRepository.findBy({ columns: { email: data.email } }),
-      this.userRepository.findBy({ columns: { document: data.document } }),
+      this.userRepository.findBy({ columns: { nickname: data.nickname } }),
     ]);
 
     if (emailAlreadyExists.length > 0) {
       throw new ConflictException(MessageError.EMAIL_ALREADY_EXISTS);
-    } else if (documentAlreadyExists.length > 0) {
-      throw new ConflictException(MessageError.DOCUMENT_ALREADY_EXISTS);
+    } else if (nicknameAlreadyExists.length > 0) {
+      throw new ConflictException(MessageError.NICKNAME_ALREADY_EXISTS);
     }
 
     const hashedPassword = await hash.generate(data.password);
 
     return await this.userRepository.create({
       name: data.name,
+      nickname: data.nickname,
       email: data.email,
-      document: data.document,
       password: hashedPassword,
     });
   }

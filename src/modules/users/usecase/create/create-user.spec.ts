@@ -1,42 +1,37 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { IUserRepository } from '../../repository/IUserRepository';
+import { CreateUserData, IUserRepository, PublicUser } from '../../repository/IUserRepository';
 import { CreateUserUseCase } from './create-user.usecase';
 import { CreateUserDTO, CreateUserSchema } from './create-user.schema';
 import { MessageError } from '@/shared/enums/erros.enum';
-import { UserEntity } from '../../entity/user.entity';
+import { UserStatus } from '../../entity/user.entity';
 import { ILogger } from '@/infra/logger/ILogger';
 import { ConflictException } from '@/shared/errors/errors';
 import { hash } from '@/shared/utils/hash';
 
 const mockCreateUserDTO: CreateUserDTO = {
   name: 'John Doe',
+  nickname: 'john.doe',
   email: 'john.doe@example.com',
-  document: '00967468078',
   password: '@Password123',
 };
 
-const existingUser = (overrides: Partial<UserEntity> = {}): UserEntity =>
-  ({
-    ...mockCreateUserDTO,
-    id: '11111',
-    status: 1,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    ...overrides,
-  }) as UserEntity;
+const existingUser = (overrides: Partial<PublicUser> = {}): PublicUser => ({
+  id: '11111',
+  name: mockCreateUserDTO.name,
+  nickname: mockCreateUserDTO.nickname,
+  status: UserStatus.ACTIVE,
+  ...overrides,
+});
 
 const mockRepository = (): IUserRepository => ({
   findBy: vi.fn().mockResolvedValue([]),
   findByEmailWithPassword: vi.fn(),
-  create: vi.fn().mockImplementation(async ({ name, email, document }: CreateUserDTO) => ({
+  create: vi.fn().mockImplementation(async ({ name, nickname }: CreateUserData) => ({
     id: 'uuid-1',
     name,
-    email,
-    document,
-    status: 1,
+    nickname,
+    status: UserStatus.ACTIVE,
   })),
-  delete: vi.fn(),
-  update: vi.fn(),
 });
 
 const mockLogger = (): ILogger => ({
@@ -62,16 +57,15 @@ describe('CreateUserUseCase', () => {
     expect(result).toEqual({
       id: 'uuid-1',
       name: mockCreateUserDTO.name,
-      email: mockCreateUserDTO.email,
-      document: mockCreateUserDTO.document,
-      status: 1,
+      nickname: mockCreateUserDTO.nickname,
+      status: UserStatus.ACTIVE,
     });
     expect(repository.findBy).toHaveBeenCalledTimes(2);
     expect(repository.findBy).toHaveBeenCalledWith({
       columns: { email: mockCreateUserDTO.email },
     });
     expect(repository.findBy).toHaveBeenCalledWith({
-      columns: { document: mockCreateUserDTO.document },
+      columns: { nickname: mockCreateUserDTO.nickname },
     });
   });
 
@@ -85,15 +79,15 @@ describe('CreateUserUseCase', () => {
     expect(repository.create).not.toHaveBeenCalled();
   });
 
-  it('should throw ConflictException if document already exists', async () => {
+  it('should throw ConflictException if nickname already exists', async () => {
     vi.mocked(repository.findBy)
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([existingUser({ email: 'john.doe.2@gmail.com' })]);
+      .mockResolvedValueOnce([existingUser({ id: '22222' })]);
 
     const promise = useCase.execute(mockCreateUserDTO);
 
     await expect(promise).rejects.toBeInstanceOf(ConflictException);
-    await expect(promise).rejects.toThrow(MessageError.DOCUMENT_ALREADY_EXISTS);
+    await expect(promise).rejects.toThrow(MessageError.NICKNAME_ALREADY_EXISTS);
     expect(repository.create).not.toHaveBeenCalled();
   });
 
@@ -106,15 +100,23 @@ describe('CreateUserUseCase', () => {
     expect(await hash.compare(mockCreateUserDTO.password, savedPassword)).toBe(true);
   });
 
-  it('should create user with document without formatting', async () => {
-    const result = CreateUserSchema.parse({ ...mockCreateUserDTO, document: '009.674.680-78' });
+  it('should trim name and nickname', async () => {
+    const result = CreateUserSchema.parse({
+      ...mockCreateUserDTO,
+      name: '  John Doe  ',
+      nickname: ' john.doe ',
+    });
 
     await useCase.execute(result);
 
     expect(repository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        document: '00967468078',
-      }),
+      expect.objectContaining({ name: 'John Doe', nickname: 'john.doe' }),
     );
+  });
+
+  it('should reject nickname with invalid characters', () => {
+    expect(
+      CreateUserSchema.safeParse({ ...mockCreateUserDTO, nickname: 'john doe!' }).success,
+    ).toBe(false);
   });
 });

@@ -7,8 +7,8 @@ import { hash } from '@/shared/utils/hash';
 
 const validPayload = {
   name: 'John Doe',
+  nickname: 'john.doe',
   email: 'john.doe@example.com',
-  document: '009.674.680-78',
   password: '@Password123',
 };
 
@@ -40,12 +40,12 @@ describe('POST /api/v1/users (integração - persistência no banco)', () => {
 
     const userInDb = await AppDataSource.getRepository(UserEntity).findOne({
       where: { email: validPayload.email },
-      select: ['id', 'name', 'email', 'document', 'password', 'status'],
+      select: ['id', 'name', 'nickname', 'email', 'password', 'status'],
     });
 
     expect(userInDb).not.toBeNull();
     expect(userInDb?.name).toBe(validPayload.name);
-    expect(userInDb?.document).toBe('00967468078');
+    expect(userInDb?.nickname).toBe(validPayload.nickname);
     expect(userInDb?.status).toBe(1);
     expect(userInDb?.password).not.toBe(validPayload.password);
     expect(await hash.compare(validPayload.password, userInDb!.password)).toBe(true);

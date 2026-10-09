@@ -20,9 +20,8 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
 
     req.user = {
       id: payload.sub,
-      email: payload.email,
       name: payload.name,
-      document: payload.document,
+      nickname: payload.nickname,
     };
   } catch {
     throw new UnauthorizedException(MessageError.INVALID_TOKEN);

@@ -1,10 +1,10 @@
 import { Repository } from 'typeorm';
-import { FindUsersByParams, IUserRepository, PublicUser } from './IUserRepository';
+import { v7 as uuidv7 } from 'uuid';
+import { CreateUserData, FindUsersByParams, IUserRepository, PublicUser } from './IUserRepository';
 import { AppDataSource } from '@/infra/database/data-source';
-import { UserEntity } from '../entity/user.entity';
-import { CreateUserDTO } from '../usecase/create/create-user.schema';
+import { UserEntity, UserStatus } from '../entity/user.entity';
 
-const SEARCH_VECTOR = `to_tsvector('simple', coalesce(u.name, '') || ' ' || coalesce(u.document, '') || ' ' || coalesce(u.email, ''))`;
+const SEARCH_VECTOR = `to_tsvector('simple', coalesce(u.name, '') || ' ' || coalesce(u.nickname, ''))`;
 
 export class UserRepository implements IUserRepository {
   private repository: Repository<UserEntity>;
@@ -13,16 +13,24 @@ export class UserRepository implements IUserRepository {
     this.repository = AppDataSource.getRepository(UserEntity);
   }
 
-  async findBy({ columns, value, cursor, limit }: FindUsersByParams): Promise<UserEntity[]> {
+  async findBy({ columns, value, cursor, limit }: FindUsersByParams): Promise<PublicUser[]> {
     const builder = this.repository
       .createQueryBuilder('u')
-      .select(['u.id', 'u.name', 'u.email', 'u.document', 'u.status'])
-      .where('u.status = :status', { status: 1 })
+      .select(['u.id', 'u.name', 'u.nickname', 'u.status'])
+      .where('u.status = :status', { status: UserStatus.ACTIVE })
       .orderBy('u.id', 'DESC')
       .limit(limit || 20);
 
-    if (columns) {
-      builder.andWhere(columns);
+    if (columns?.id) {
+      builder.andWhere('u.id = :id', { id: columns.id });
+    }
+
+    if (columns?.email) {
+      builder.andWhere('lower(u.email) = lower(:email)', { email: columns.email });
+    }
+
+    if (columns?.nickname) {
+      builder.andWhere('lower(u.nickname) = lower(:nickname)', { nickname: columns.nickname });
     }
 
     if (value) {
@@ -37,47 +45,24 @@ export class UserRepository implements IUserRepository {
   }
 
   async findByEmailWithPassword(email: string): Promise<UserEntity | null> {
-    return await this.repository.findOne({
-      where: { email, status: 1 },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        document: true,
-        password: true,
-      },
-    });
+    return await this.repository
+      .createQueryBuilder('u')
+      .select(['u.id', 'u.name', 'u.nickname', 'u.password'])
+      .where('lower(u.email) = lower(:email)', { email })
+      .andWhere('u.status = :status', { status: UserStatus.ACTIVE })
+      .getOne();
   }
 
-  async create(data: CreateUserDTO): Promise<PublicUser> {
+  async create(data: CreateUserData): Promise<PublicUser> {
     const { raw } = await this.repository
       .createQueryBuilder()
       .insert()
       .into(UserEntity)
-      .values(data)
+      .values({ id: uuidv7(), ...data })
       .updateEntity(false)
-      .returning(['id', 'name', 'email', 'document', 'status'])
+      .returning(['id', 'name', 'nickname', 'status'])
       .execute();
 
     return raw[0];
-  }
-
-  async update(
-    id: string,
-    data: Partial<{ name: string; email: string; document: string }>,
-  ): Promise<PublicUser | null> {
-    const { raw } = await this.repository
-      .createQueryBuilder()
-      .update(UserEntity)
-      .set(data)
-      .where('id = :id', { id })
-      .returning(['id', 'name', 'email', 'document', 'status'])
-      .execute();
-
-    return raw[0] ?? null;
-  }
-
-  async delete(id: string): Promise<void> {
-    await this.repository.delete(id);
   }
 }

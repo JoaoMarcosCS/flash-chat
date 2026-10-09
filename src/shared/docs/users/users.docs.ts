@@ -8,9 +8,10 @@ const UserSchema = z
   .object({
     id: z.uuid(),
     name: z.string(),
-    email: z.email(),
-    document: z.string(),
-    status: z.number(),
+    nickname: z.string(),
+    status: z.union([z.literal(1), z.literal(2)]).meta({
+      description: '1 = Active, 2 = Deactivated',
+    }),
   })
   .meta({ id: 'User' });
 
@@ -25,7 +26,7 @@ export const usersPaths: ZodOpenApiPathsObject = {
   '/users': {
     get: {
       tags: ['Users'],
-      summary: 'Busca usuários por nome, e-mail ou documento com paginação por cursor',
+      summary: 'Busca usuários ativos por nome ou nickname com paginação por cursor',
       security: [{ bearerAuth: [] }],
       requestParams: { query: SearchUsersSchema },
       responses: {
@@ -47,8 +48,8 @@ export const usersPaths: ZodOpenApiPathsObject = {
             schema: CreateUserSchema,
             example: {
               name: 'João Silva',
+              nickname: 'joao.silva',
               email: 'joao@email.com',
-              document: '529.982.247-25',
               password: 'Senha@123',
             },
           },
@@ -60,7 +61,7 @@ export const usersPaths: ZodOpenApiPathsObject = {
           content: { 'application/json': { schema: UserSchema } },
         },
         '400': errorResponse('Dados inválidos'),
-        '409': errorResponse('E-mail ou documento já cadastrado'),
+        '409': errorResponse('E-mail ou nickname já cadastrado'),
         '500': errorResponse('Erro interno'),
       },
     },

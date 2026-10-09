@@ -1,12 +1,12 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateUsersSearchIndex1791251889376 implements MigrationInterface {
-  name = 'CreateUsersSearchIndex1791251889376';
+export class CreateUsersSearchIndex1791504000001 implements MigrationInterface {
+  name = 'CreateUsersSearchIndex1791504000001';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
       `CREATE INDEX "IDX_users_search" ON "users"
-        USING GIN (to_tsvector('simple', coalesce("name", '') || ' ' || coalesce("document", '') || ' ' || coalesce("email", '')))`,
+        USING GIN (to_tsvector('simple', coalesce("name", '') || ' ' || coalesce("nickname", '')))`,
     );
   }
 

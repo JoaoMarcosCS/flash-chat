@@ -5,7 +5,7 @@ import { usersPaths } from './users/users.docs';
 export const openApiDocument = createDocument({
   openapi: '3.1.0',
   info: {
-    title: 'Template DDD Express',
+    title: 'Flash Chat API',
     version: '1.0.0',
   },
   servers: [{ url: `http://localhost:${env.API_PORT}/api/v1` }],
