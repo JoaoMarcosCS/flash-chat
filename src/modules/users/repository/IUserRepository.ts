@@ -1,7 +1,10 @@
 import { UserEntity } from '../entity/user.entity';
+import { UserStatus } from '@/shared/enums/users/user-status.enum';
 
 export type FindUsersByParams = {
-  columns?: Partial<Pick<UserEntity, 'id' | 'email' | 'nickname'>>;
+  ids?: string[];
+  columns?: Partial<Pick<UserEntity, 'email' | 'nickname'>>;
+  statusValues?: UserStatus[];
   value?: string;
   cursor?: string;
   limit?: number;

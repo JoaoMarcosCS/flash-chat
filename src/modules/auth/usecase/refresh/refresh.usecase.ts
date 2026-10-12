@@ -16,7 +16,7 @@ export class RefreshUseCase {
       throw new UnauthorizedException(MessageError.INVALID_TOKEN);
     }
 
-    const [user] = (await this.userRepository.findBy({ columns: { id: userId } })) ?? [];
+    const [user] = (await this.userRepository.findBy({ ids: [userId] })) ?? [];
 
     if (!user) {
       throw new UnauthorizedException(MessageError.INVALID_TOKEN);

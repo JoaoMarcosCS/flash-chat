@@ -63,14 +63,28 @@ describe('CreateUserUseCase', () => {
     expect(repository.findBy).toHaveBeenCalledTimes(2);
     expect(repository.findBy).toHaveBeenCalledWith({
       columns: { email: mockCreateUserDTO.email },
+      statusValues: [UserStatus.ACTIVE, UserStatus.DEACTIVATED],
     });
     expect(repository.findBy).toHaveBeenCalledWith({
       columns: { nickname: mockCreateUserDTO.nickname },
+      statusValues: [UserStatus.ACTIVE, UserStatus.DEACTIVATED],
     });
   });
 
   it('should throw ConflictException if email already exists', async () => {
     vi.mocked(repository.findBy).mockResolvedValueOnce([existingUser()]);
+
+    const promise = useCase.execute(mockCreateUserDTO);
+
+    await expect(promise).rejects.toBeInstanceOf(ConflictException);
+    await expect(promise).rejects.toThrow(MessageError.EMAIL_ALREADY_EXISTS);
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('should throw ConflictException if email belongs to a deactivated user', async () => {
+    vi.mocked(repository.findBy).mockResolvedValueOnce([
+      existingUser({ status: UserStatus.DEACTIVATED }),
+    ]);
 
     const promise = useCase.execute(mockCreateUserDTO);
 

@@ -14,16 +14,23 @@ export class UserRepository implements IUserRepository {
     this.repository = AppDataSource.getRepository(UserEntity);
   }
 
-  async findBy({ columns, value, cursor, limit }: FindUsersByParams): Promise<PublicUser[]> {
+  async findBy({
+    ids,
+    columns,
+    statusValues = [UserStatus.ACTIVE],
+    value,
+    cursor,
+    limit,
+  }: FindUsersByParams): Promise<PublicUser[]> {
     const builder = this.repository
       .createQueryBuilder('u')
       .select(['u.id', 'u.name', 'u.nickname', 'u.status'])
-      .where('u.status = :status', { status: UserStatus.ACTIVE })
+      .where('u.status IN (:...statusValues)', { statusValues })
       .orderBy('u.id', 'DESC')
-      .limit(limit || 20);
+      .limit(ids?.length || limit || 20);
 
-    if (columns?.id) {
-      builder.andWhere('u.id = :id', { id: columns.id });
+    if (ids?.length) {
+      builder.andWhere('u.id IN (:...ids)', { ids });
     }
 
     if (columns?.email) {
