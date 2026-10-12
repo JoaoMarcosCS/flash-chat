@@ -27,6 +27,7 @@ export class UserRepository implements IUserRepository {
     ids,
     columns,
     statusValues = [UserStatus.ACTIVE],
+    excludeIds,
     value,
     cursor,
     limit,
@@ -48,6 +49,10 @@ export class UserRepository implements IUserRepository {
 
     if (columns?.nickname) {
       builder.andWhere('lower(u.nickname) = lower(:nickname)', { nickname: columns.nickname });
+    }
+
+    if (excludeIds?.length) {
+      builder.andWhere('u.id NOT IN (:...excludeIds)', { excludeIds });
     }
 
     if (value) {

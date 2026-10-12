@@ -10,7 +10,7 @@ export class SearchUsersController {
 
     const useCase = container.resolve(SearchUsersUseCase);
 
-    const result = await useCase.execute(safeData);
+    const result = await useCase.execute(safeData, req.user.id);
 
     return res.status(200).json(result);
   }

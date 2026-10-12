@@ -5,6 +5,7 @@ export type FindUsersByParams = {
   ids?: string[];
   columns?: Partial<Pick<UserEntity, 'email' | 'nickname'>>;
   statusValues?: UserStatus[];
+  excludeIds?: string[];
   value?: string;
   cursor?: string;
   limit?: number;

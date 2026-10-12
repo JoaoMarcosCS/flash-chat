@@ -29,8 +29,12 @@ export const buildTsQuery = (search?: string): string | undefined => {
 export class SearchUsersUseCase {
   constructor(@inject('IUserRepository') private userRepository: IUserRepository) {}
 
-  async execute({ search, cursor, limit }: SearchUsersDTO): Promise<SearchUsersResponse> {
+  async execute(
+    { search, cursor, limit }: SearchUsersDTO,
+    userId: string,
+  ): Promise<SearchUsersResponse> {
     const users = await this.userRepository.findBy({
+      excludeIds: [userId],
       value: buildTsQuery(search),
       cursor,
       limit: limit + 1,

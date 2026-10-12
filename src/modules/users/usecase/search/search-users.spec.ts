@@ -13,6 +13,8 @@ const makeUser = (id: string): PublicUser => ({
 
 const cursor = '6f1c2b8e-1d4a-4b6e-9a3f-2c1d0e9b8a7f';
 
+const userId = '0199b7a0-0000-7000-8000-000000000001';
+
 const mockRepository = (): IUserRepository => ({
   findBy: vi.fn().mockResolvedValue([]),
   findByEmailWithPassword: vi.fn(),
@@ -29,9 +31,10 @@ describe('SearchUsersUseCase', () => {
   });
 
   it('should use default limit and no cursor when none is provided', async () => {
-    await useCase.execute(SearchUsersSchema.parse({}));
+    await useCase.execute(SearchUsersSchema.parse({}), userId);
 
     expect(repository.findBy).toHaveBeenCalledWith({
+      excludeIds: [userId],
       value: undefined,
       cursor: undefined,
       limit: SEARCH_USERS_DEFAULT_LIMIT + 1,
@@ -39,9 +42,10 @@ describe('SearchUsersUseCase', () => {
   });
 
   it('should pass the cursor id and the tsquery', async () => {
-    await useCase.execute({ search: 'John do', cursor, limit: 10 });
+    await useCase.execute({ search: 'John do', cursor, limit: 10 }, userId);
 
     expect(repository.findBy).toHaveBeenCalledWith({
+      excludeIds: [userId],
       value: 'john:* & do:*',
       cursor,
       limit: 11,
@@ -55,7 +59,7 @@ describe('SearchUsersUseCase', () => {
       makeUser('a'),
     ]);
 
-    const result = await useCase.execute({ limit: 2 });
+    const result = await useCase.execute({ limit: 2 }, userId);
 
     expect(result.data.map((user) => user.id)).toEqual(['c', 'b']);
     expect(result.nextCursor).toBe('b');
@@ -64,7 +68,7 @@ describe('SearchUsersUseCase', () => {
   it('should return null nextCursor on the last page', async () => {
     vi.mocked(repository.findBy).mockResolvedValueOnce([makeUser('b'), makeUser('a')]);
 
-    const result = await useCase.execute({ limit: 2 });
+    const result = await useCase.execute({ limit: 2 }, userId);
 
     expect(result.data).toHaveLength(2);
     expect(result.nextCursor).toBeNull();
