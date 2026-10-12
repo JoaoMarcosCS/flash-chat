@@ -1,11 +1,20 @@
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
 import { CreateUserData, FindUsersByParams, IUserRepository, PublicUser } from './IUserRepository';
 import { AppDataSource } from '@/infra/database/data-source';
 import { UserEntity } from '../entity/user.entity';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
+import { MessageError } from '@/shared/enums/erros.enum';
+import { ConflictException } from '@/shared/errors/errors';
 
 const SEARCH_VECTOR = `to_tsvector('simple', coalesce(u.name, '') || ' ' || coalesce(u.nickname, ''))`;
+
+const UNIQUE_VIOLATION = '23505';
+
+const UNIQUE_CONSTRAINT_ERRORS: Record<string, MessageError> = {
+  UQ_users_email: MessageError.EMAIL_ALREADY_EXISTS,
+  UQ_users_nickname: MessageError.NICKNAME_ALREADY_EXISTS,
+};
 
 export class UserRepository implements IUserRepository {
   private repository: Repository<UserEntity>;
@@ -62,15 +71,35 @@ export class UserRepository implements IUserRepository {
   }
 
   async create(data: CreateUserData): Promise<PublicUser> {
-    const { raw } = await this.repository
-      .createQueryBuilder()
-      .insert()
-      .into(UserEntity)
-      .values({ id: uuidv7(), ...data })
-      .updateEntity(false)
-      .returning(['id', 'name', 'nickname', 'status'])
-      .execute();
+    try {
+      const { raw } = await this.repository
+        .createQueryBuilder()
+        .insert()
+        .into(UserEntity)
+        .values({ id: uuidv7(), ...data })
+        .updateEntity(false)
+        .returning(['id', 'name', 'nickname', 'status'])
+        .execute();
 
-    return raw[0];
+      return raw[0];
+    } catch (error) {
+      const conflict = getUniqueConflict(error);
+
+      if (conflict) {
+        throw new ConflictException(conflict);
+      }
+
+      throw error;
+    }
   }
 }
+
+const getUniqueConflict = (error: unknown): MessageError | undefined => {
+  if (!(error instanceof QueryFailedError)) {
+    return undefined;
+  }
+
+  const { code, constraint } = error.driverError as { code?: string; constraint?: string };
+
+  return code === UNIQUE_VIOLATION && constraint ? UNIQUE_CONSTRAINT_ERRORS[constraint] : undefined;
+};
