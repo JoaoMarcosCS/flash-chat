@@ -34,7 +34,7 @@ export const usersPaths: ZodOpenApiPathsObject = {
           description: 'Página de usuários',
           content: { 'application/json': { schema: SearchUsersResponseSchema } },
         },
-        '400': errorResponse('Parâmetros inválidos ou cursor inválido'),
+        '400': errorResponse('Busca ausente ou com menos de 2 caracteres, ou cursor inválido'),
         '401': errorResponse('Token ausente ou inválido'),
         '500': errorResponse('Erro interno'),
       },

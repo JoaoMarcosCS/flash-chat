@@ -31,11 +31,11 @@ describe('SearchUsersUseCase', () => {
   });
 
   it('should use default limit and no cursor when none is provided', async () => {
-    await useCase.execute(SearchUsersSchema.parse({}), userId);
+    await useCase.execute(SearchUsersSchema.parse({ search: 'john' }), userId);
 
     expect(repository.findBy).toHaveBeenCalledWith({
       excludeIds: [userId],
-      value: undefined,
+      value: 'john:*',
       cursor: undefined,
       limit: SEARCH_USERS_DEFAULT_LIMIT + 1,
     });
@@ -59,7 +59,7 @@ describe('SearchUsersUseCase', () => {
       makeUser('a'),
     ]);
 
-    const result = await useCase.execute({ limit: 2 }, userId);
+    const result = await useCase.execute({ search: 'john', limit: 2 }, userId);
 
     expect(result.data.map((user) => user.id)).toEqual(['c', 'b']);
     expect(result.nextCursor).toBe('b');
@@ -68,7 +68,7 @@ describe('SearchUsersUseCase', () => {
   it('should return null nextCursor on the last page', async () => {
     vi.mocked(repository.findBy).mockResolvedValueOnce([makeUser('b'), makeUser('a')]);
 
-    const result = await useCase.execute({ limit: 2 }, userId);
+    const result = await useCase.execute({ search: 'john', limit: 2 }, userId);
 
     expect(result.data).toHaveLength(2);
     expect(result.nextCursor).toBeNull();
@@ -95,15 +95,31 @@ describe('buildTsQuery', () => {
 });
 
 describe('SearchUsersSchema', () => {
+  it('should reject a missing search', () => {
+    const result = SearchUsersSchema.safeParse({});
+
+    expect(result.error?.issues[0].message).toBe('Busca é obrigatória');
+  });
+
+  it.each(['', '   ', 'a', ' a ', '&|', 'a!'])('should reject search %j', (search) => {
+    const result = SearchUsersSchema.safeParse({ search });
+
+    expect(result.error?.issues[0].message).toBe('Busca deve ter no mínimo 2 caracteres');
+  });
+
+  it('should accept and trim a search with 2 characters', () => {
+    expect(SearchUsersSchema.parse({ search: ' an ' }).search).toBe('an');
+  });
+
   it('should reject limit greater than 100', () => {
-    expect(SearchUsersSchema.safeParse({ limit: '101' }).success).toBe(false);
+    expect(SearchUsersSchema.safeParse({ search: 'john', limit: '101' }).success).toBe(false);
   });
 
   it('should coerce limit from query string', () => {
-    expect(SearchUsersSchema.parse({ limit: '5' }).limit).toBe(5);
+    expect(SearchUsersSchema.parse({ search: 'john', limit: '5' }).limit).toBe(5);
   });
 
   it('should reject a cursor that is not an uuid', () => {
-    expect(SearchUsersSchema.safeParse({ cursor: 'invalid' }).success).toBe(false);
+    expect(SearchUsersSchema.safeParse({ search: 'john', cursor: 'invalid' }).success).toBe(false);
   });
 });

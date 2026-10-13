@@ -1,14 +1,12 @@
 import { inject, injectable } from 'tsyringe';
 import { IUserRepository } from '../../repository/IUserRepository';
-import { SearchUsersDTO } from './search-users.schema';
+import { SearchUsersDTO, TSQUERY_SPECIAL_CHARACTERS } from './search-users.schema';
 import { PublicUser } from '../../repository/IUserRepository';
 
 export type SearchUsersResponse = {
   data: PublicUser[];
   nextCursor: string | null;
 };
-
-const TSQUERY_SPECIAL_CHARACTERS = /[&|!():*<>'"\\]/g;
 
 export const buildTsQuery = (search?: string): string | undefined => {
   if (!search) {

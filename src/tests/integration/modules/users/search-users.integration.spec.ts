@@ -50,11 +50,25 @@ describe('GET /api/v1/users (integração)', () => {
     expect(response.status).toBe(401);
   });
 
-  it('should return the first page with default limit when no cursor is provided', async () => {
+  it('should return 400 when search is missing', async () => {
     const response = await search();
 
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toBe('Busca é obrigatória');
+  });
+
+  it('should return 400 when search has fewer than 2 characters', async () => {
+    const response = await search({ search: 'a' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toBe('Busca deve ter no mínimo 2 caracteres');
+  });
+
+  it('should return the first page with default limit when no cursor is provided', async () => {
+    const response = await search({ search: 'souza' });
+
     expect(response.status).toBe(200);
-    expect(response.body.data).toHaveLength(users.length);
+    expect(response.body.data).toHaveLength(2);
     expect(response.body.data[0]).not.toHaveProperty('password');
     expect(response.body.data[0]).not.toHaveProperty('email');
     expect(response.body.nextCursor).toBeNull();
@@ -65,15 +79,15 @@ describe('GET /api/v1/users (integração)', () => {
     let cursor: string | null = null;
 
     do {
-      const response = await search(cursor ? { limit: 2, cursor } : { limit: 2 });
+      const query = { search: 'souza', limit: 1 };
+      const response = await search(cursor ? { ...query, cursor } : query);
 
       expect(response.status).toBe(200);
       collected.push(...names(response.body));
       cursor = response.body.nextCursor;
     } while (cursor);
 
-    expect(collected).toHaveLength(users.length);
-    expect([...collected].sort()).toEqual(users.map((user) => user.name).sort());
+    expect([...collected].sort()).toEqual(['Ana Souza', 'Carla Souza']);
   });
 
   it('should search by partial name ignoring deactivated users', async () => {
@@ -94,19 +108,8 @@ describe('GET /api/v1/users (integração)', () => {
     expect(names(response.body)).toEqual([]);
   });
 
-  it('should combine search and cursor pagination', async () => {
-    const first = await search({ search: 'souza', limit: 1 });
-    const second = await search({ search: 'souza', limit: 1, cursor: first.body.nextCursor });
-
-    expect([...names(first.body), ...names(second.body)].sort()).toEqual([
-      'Ana Souza',
-      'Carla Souza',
-    ]);
-    expect(second.body.nextCursor).toBeNull();
-  });
-
   it('should return 400 for invalid cursor', async () => {
-    const response = await search({ cursor: 'invalid' });
+    const response = await search({ search: 'souza', cursor: 'invalid' });
 
     expect(response.status).toBe(400);
     expect(response.body.error.message).toBe('Cursor inválido');
