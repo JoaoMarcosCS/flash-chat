@@ -17,7 +17,10 @@ export const CreateUserSchema = z.object({
     .trim()
     .min(3, 'Nickname deve ter no mínimo 3 caracteres')
     .max(50, 'Nickname deve ter no máximo 50 caracteres')
-    .regex(/^[A-Za-z0-9_.]+$/, 'Nickname deve conter apenas letras, números, "_" e "."'),
+    .regex(/^[A-Za-z0-9_.]+$/, 'Nickname deve conter apenas letras, números, "_" e "."')
+    .regex(/^[A-Za-z0-9]/, 'Nickname deve começar com uma letra ou um número')
+    .refine((value) => !value.endsWith('.'), 'Nickname não pode terminar com "."')
+    .refine((value) => !value.includes('..'), 'Nickname não pode ter "." consecutivos'),
   email: z
     .email('E-mail inválido')
     .max(255, 'E-mail deve ter no máximo 255 caracteres')

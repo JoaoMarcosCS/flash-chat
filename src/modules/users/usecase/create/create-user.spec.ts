@@ -133,4 +133,23 @@ describe('CreateUserUseCase', () => {
       CreateUserSchema.safeParse({ ...mockCreateUserDTO, nickname: 'john doe!' }).success,
     ).toBe(false);
   });
+
+  it.each([
+    ['.john', 'Nickname deve começar com uma letra ou um número'],
+    ['_john', 'Nickname deve começar com uma letra ou um número'],
+    ['john.', 'Nickname não pode terminar com "."'],
+    ['john..doe', 'Nickname não pode ter "." consecutivos'],
+  ])('should reject nickname %s', (nickname, message) => {
+    const result = CreateUserSchema.safeParse({ ...mockCreateUserDTO, nickname });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.message)).toContain(message);
+  });
+
+  it.each(['john.doe', 'john_doe', 'john_', '1john', 'j.o.h.n'])(
+    'should accept nickname %s',
+    (nickname) => {
+      expect(CreateUserSchema.safeParse({ ...mockCreateUserDTO, nickname }).success).toBe(true);
+    },
+  );
 });
