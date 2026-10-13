@@ -128,6 +128,23 @@ describe('CreateUserUseCase', () => {
     );
   });
 
+  it('should reject password longer than 15 characters', () => {
+    const result = CreateUserSchema.safeParse({
+      ...mockCreateUserDTO,
+      password: 'Abcdefgh1234@xyz',
+    });
+
+    expect(result.error?.issues.map((issue) => issue.message)).toContain(
+      'Senha deve ter no máximo 15 caracteres',
+    );
+  });
+
+  it('should accept password with exactly 15 characters', () => {
+    expect(
+      CreateUserSchema.safeParse({ ...mockCreateUserDTO, password: 'Abcdefgh1234@xy' }).success,
+    ).toBe(true);
+  });
+
   it('should reject nickname with invalid characters', () => {
     expect(
       CreateUserSchema.safeParse({ ...mockCreateUserDTO, nickname: 'john doe!' }).success,

@@ -28,6 +28,7 @@ export const CreateUserSchema = z.object({
   password: z
     .string()
     .min(6, 'Senha deve ter no mínimo 6 caracteres')
+    .max(15, 'Senha deve ter no máximo 15 caracteres')
     .refine((value) => !hasEmoji(value), 'Senha não pode conter emojis')
     .refine((value) => /[A-Z]/.test(value), 'Senha deve conter ao menos uma letra maiúscula')
     .refine((value) => /[a-z]/.test(value), 'Senha deve conter ao menos uma letra minúscula')
