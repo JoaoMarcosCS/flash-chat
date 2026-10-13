@@ -1,16 +1,23 @@
 import z from 'zod';
 import { hasEmoji } from '@/shared/utils/has-special-characters';
 
+const NAME_LETTERS = 'A-Za-zÀ-ÖØ-öø-ÿ';
+
 export const CreateUserSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(3, 'Nome é obrigatório')
+    .overwrite((value) => value.replace(/ {2,}/g, ' '))
+    .min(3, 'Nome deve ter no mínimo 3 caracteres')
     .max(255, 'Nome deve ter no máximo 255 caracteres')
     .refine((value) => !hasEmoji(value), 'Nome não pode conter emojis')
-    .refine(
-      (value) => /^[A-Za-zÀ-ÿ\s]+$/.test(value),
-      'Nome deve conter apenas letras, espaços e acentos',
+    .regex(
+      new RegExp(`^[${NAME_LETTERS} '’-]+$`),
+      'Nome deve conter apenas letras, espaços, hífen e apóstrofo',
+    )
+    .regex(
+      new RegExp(`^[${NAME_LETTERS}](.*[${NAME_LETTERS}])?$`),
+      'Nome deve começar e terminar com uma letra',
     ),
   nickname: z
     .string()

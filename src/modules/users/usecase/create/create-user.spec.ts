@@ -145,6 +145,33 @@ describe('CreateUserUseCase', () => {
     ).toBe(true);
   });
 
+  it.each(['Ana-Maria Souza', "Joana D'Ávila", 'Joana D’Ávila', 'Zoë Müller', 'Ana'])(
+    'should accept name %s',
+    (name) => {
+      expect(CreateUserSchema.safeParse({ ...mockCreateUserDTO, name }).success).toBe(true);
+    },
+  );
+
+  it('should collapse repeated spaces in name', () => {
+    expect(CreateUserSchema.parse({ ...mockCreateUserDTO, name: '  Ana    Souza ' }).name).toBe(
+      'Ana Souza',
+    );
+  });
+
+  it.each([
+    ['Al', 'Nome deve ter no mínimo 3 caracteres'],
+    ['Ana\nSouza', 'Nome deve conter apenas letras, espaços, hífen e apóstrofo'],
+    ['Ana\tSouza', 'Nome deve conter apenas letras, espaços, hífen e apóstrofo'],
+    ['Ana × Souza', 'Nome deve conter apenas letras, espaços, hífen e apóstrofo'],
+    ['Ana2', 'Nome deve conter apenas letras, espaços, hífen e apóstrofo'],
+    ['-Ana', 'Nome deve começar e terminar com uma letra'],
+    ["Ana'", 'Nome deve começar e terminar com uma letra'],
+  ])('should reject name %j', (name, message) => {
+    const result = CreateUserSchema.safeParse({ ...mockCreateUserDTO, name });
+
+    expect(result.error?.issues.map((issue) => issue.message)).toContain(message);
+  });
+
   it('should reject nickname with invalid characters', () => {
     expect(
       CreateUserSchema.safeParse({ ...mockCreateUserDTO, nickname: 'john doe!' }).success,
