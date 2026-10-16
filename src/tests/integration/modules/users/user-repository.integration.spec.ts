@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { UserRepository } from '@/modules/users/repository/user.repository';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
+import { ConflictException } from '@/shared/errors/errors';
+import { MessageError } from '@/shared/enums/erros.enum';
 
 const payload = {
   name: 'John Doe',
@@ -48,5 +50,33 @@ describe('UserRepository (integração)', () => {
 
     expect(byEmail).toHaveLength(1);
     expect(byNickname).toHaveLength(1);
+  });
+
+  it('should throw ConflictException when e-mail already exists ignoring case', async () => {
+    const repository = new UserRepository();
+    await repository.create(payload);
+
+    const promise = repository.create({
+      ...payload,
+      nickname: 'other.nickname',
+      email: 'JOHN.DOE@example.com',
+    });
+
+    await expect(promise).rejects.toBeInstanceOf(ConflictException);
+    await expect(promise).rejects.toThrow(MessageError.EMAIL_ALREADY_EXISTS);
+  });
+
+  it('should throw ConflictException when nickname already exists ignoring case', async () => {
+    const repository = new UserRepository();
+    await repository.create(payload);
+
+    const promise = repository.create({
+      ...payload,
+      nickname: 'John.Doe',
+      email: 'other@example.com',
+    });
+
+    await expect(promise).rejects.toBeInstanceOf(ConflictException);
+    await expect(promise).rejects.toThrow(MessageError.NICKNAME_ALREADY_EXISTS);
   });
 });
