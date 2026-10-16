@@ -28,3 +28,7 @@ process.env.DB_PASS = 'test_pass';
 process.env.DB_NAME = 'test_db';
 process.env.REDIS_HOST = 'localhost';
 process.env.REDIS_PORT = '6379';
+process.env.JWT_SECRET = 'test-access-secret-0123456789abcdef';
+process.env.JWT_EXPIRES_IN = '15m';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-0123456789abcdef';
+process.env.JWT_REFRESH_EXPIRES_IN = '7d';
