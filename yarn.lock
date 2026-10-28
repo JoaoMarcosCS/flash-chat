@@ -917,6 +917,11 @@ ajv@^6.14.0:
     json-schema-traverse "^0.4.1"
     uri-js "^4.2.2"
 
+amqplib@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/amqplib/-/amqplib-2.2.0.tgz#9d70d20d4d04306abb22cadf2431259b3b5e68a9"
+  integrity sha512-VifzN9aHs/Q3zTruVHXh2yCisQyXexBN91CQ2E5iSyUKyNjH6ilYhJGte5AXZH/Bj1PaH7SwPhyuSf6Msd2udw==
+
 ansi-escapes@^7.0.0:
   version "7.3.0"
   resolved "https://registry.npmjs.org/ansi-escapes/-/ansi-escapes-7.3.0.tgz"
