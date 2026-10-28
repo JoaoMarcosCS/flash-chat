@@ -5,7 +5,7 @@ import { app } from '@/infra/http/index';
 import { AppDataSource } from '@/infra/database/data-source';
 import { ChatEntity } from '@/modules/chats/entity/chat.entity';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
-import { bearer, createUser, deactivate, TestUser } from './chat-fixtures';
+import { bearer, createUser, deactivate, listenChatCreated, TestUser } from './chat-fixtures';
 
 const post = (user: TestUser, body: object) =>
   supertest(app).post('/api/v1/chats/direct').set('Authorization', bearer(user)).send(body);
@@ -41,6 +41,18 @@ describe('POST /api/v1/chats/direct (integração)', () => {
         { id: bruno.id, name: 'Bruno Lima', nickname: 'bruno' },
       ],
     });
+  });
+
+  it('should publish chat.created only when the chat is created', async () => {
+    const listener = await listenChatCreated();
+
+    const created = await post(ana, { participantId: bruno.id });
+    await post(bruno, { participantId: ana.id });
+
+    expect(await listener.received()).toEqual([
+      { participantIds: [ana.id, bruno.id], chat: created.body },
+    ]);
+    await listener.close();
   });
 
   it('should return 200 with the same chat when it already exists', async () => {

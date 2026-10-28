@@ -5,6 +5,8 @@ import { MessageEntity } from '@/modules/messages/entity/message.entity';
 import { UserEntity } from '@/modules/users/entity/user.entity';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { generateTokens } from '@/modules/auth/token/token';
+import { RabbitMQConnection } from '@/infra/queue/rabbitmq-connection.singleton';
+import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 
 export type TestUser = { id: string; name: string; nickname: string; token: string };
 
@@ -49,3 +51,24 @@ export const sendMessage = async (chatId: string, sender: TestUser, content: str
 };
 
 export const bearer = (user: TestUser) => `Bearer ${user.token}`;
+
+export const listenChatCreated = async () => {
+  const channel = await (await RabbitMQConnection.getInstance()).getConnection().createChannel();
+  await channel.assertExchange(Exchange.EVENTS, 'topic', { durable: true });
+  const { queue } = await channel.assertQueue('', { exclusive: true });
+  await channel.bindQueue(queue, Exchange.EVENTS, RoutingKey.CHAT_CREATED);
+
+  const received = async (): Promise<unknown[]> => {
+    const events: unknown[] = [];
+    let message = await channel.get(queue, { noAck: true });
+
+    while (message) {
+      events.push(JSON.parse(message.content.toString()));
+      message = await channel.get(queue, { noAck: true });
+    }
+
+    return events;
+  };
+
+  return { received, close: () => channel.close() };
+};

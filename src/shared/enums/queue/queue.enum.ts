@@ -1,0 +1,13 @@
+export enum Exchange {
+  EVENTS = 'flash-chat.events',
+}
+
+export enum RoutingKey {
+  MESSAGE_PUBLISHED = 'message.published',
+  MESSAGE_PERSISTED = 'message.persisted',
+  CHAT_CREATED = 'chat.created',
+}
+
+export enum QueueName {
+  MESSAGES_PERSIST = 'messages.persist',
+}

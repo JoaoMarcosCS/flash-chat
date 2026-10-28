@@ -1,9 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatDetails, IChatRepository } from '../../repository/IChatRepository';
 import { CreateGroupUseCase } from './create-group.usecase';
 import { CreateGroupDTO, CreateGroupSchema } from './create-group.schema';
 import { IUserRepository, PublicUser } from '@/modules/users/repository/IUserRepository';
 import { ILogger } from '@/infra/logger/ILogger';
+import { Queue } from '@/infra/queue/queue.provider';
+import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { MessageError } from '@/shared/enums/erros.enum';
 import {
@@ -63,11 +65,19 @@ describe('CreateGroupUseCase', () => {
   let chatRepository: IChatRepository;
   let userRepository: IUserRepository;
   let useCase: CreateGroupUseCase;
+  let logger: ILogger;
+  let publishSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     chatRepository = mockChatRepository();
     userRepository = mockUserRepository();
-    useCase = new CreateGroupUseCase(chatRepository, userRepository, mockLogger());
+    logger = mockLogger();
+    useCase = new CreateGroupUseCase(chatRepository, userRepository, logger);
+    publishSpy = vi.spyOn(Queue, 'publishExchange').mockResolvedValue();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should create a group with the initiator', async () => {
@@ -87,6 +97,24 @@ describe('CreateGroupUseCase', () => {
       { id: brunoId, name: 'User 2', nickname: 'user2' },
       { id: carlaId, name: 'User 3', nickname: 'user3' },
     ]);
+  });
+
+  it('should publish chat.created to all participants', async () => {
+    const chat = await useCase.execute(dto, userId);
+
+    expect(publishSpy).toHaveBeenCalledWith(Exchange.EVENTS, RoutingKey.CHAT_CREATED, {
+      participantIds: [userId, brunoId, carlaId],
+      chat,
+    });
+  });
+
+  it('should still return the group when publishing chat.created fails', async () => {
+    publishSpy.mockRejectedValueOnce(new Error('broker down'));
+
+    const chat = await useCase.execute(dto, userId);
+
+    expect(chat.isGroup).toBe(true);
+    expect(logger.error).toHaveBeenCalledWith('Failed to publish chat.created', expect.anything());
   });
 
   it('should never mark a group as read-only', async () => {

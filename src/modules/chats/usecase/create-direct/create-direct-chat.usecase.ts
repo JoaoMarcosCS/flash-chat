@@ -2,6 +2,7 @@ import { inject, injectable } from 'tsyringe';
 import { IChatRepository } from '../../repository/IChatRepository';
 import { ChatResponse, toChatResponse } from '../../mapper/chat.mapper';
 import { CreateDirectChatDTO } from './create-direct-chat.schema';
+import { publishChatCreated } from '../../event/chat-created.event';
 import { IUserRepository } from '@/modules/users/repository/IUserRepository';
 import { ILogger } from '@/infra/logger/ILogger';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
@@ -66,6 +67,12 @@ export class CreateDirectChatUseCase {
       participantId,
     });
 
-    return { chat: toChatResponse(chat), created };
+    const response = toChatResponse(chat);
+
+    if (created) {
+      await publishChatCreated(response, this.logger);
+    }
+
+    return { chat: response, created };
   }
 }

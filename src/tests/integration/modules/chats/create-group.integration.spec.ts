@@ -5,7 +5,7 @@ import { app } from '@/infra/http/index';
 import { AppDataSource } from '@/infra/database/data-source';
 import { ChatEntity } from '@/modules/chats/entity/chat.entity';
 import { ChatParticipantEntity } from '@/modules/chats/entity/chat-participant.entity';
-import { bearer, createUser, deactivate, TestUser } from './chat-fixtures';
+import { bearer, createUser, deactivate, listenChatCreated, TestUser } from './chat-fixtures';
 
 const post = (user: TestUser, body: object) =>
   supertest(app).post('/api/v1/chats/groups').set('Authorization', bearer(user)).send(body);
@@ -50,6 +50,17 @@ describe('POST /api/v1/chats/groups (integração)', () => {
         chatId: response.body.id,
       }),
     ).toBe(3);
+  });
+
+  it('should publish chat.created to all participants', async () => {
+    const listener = await listenChatCreated();
+
+    const response = await post(ana, { title: 'Viagem', participantIds: [bruno.id, carla.id] });
+
+    expect(await listener.received()).toEqual([
+      { participantIds: [ana.id, bruno.id, carla.id], chat: response.body },
+    ]);
+    await listener.close();
   });
 
   it.each([
