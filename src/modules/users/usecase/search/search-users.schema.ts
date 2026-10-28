@@ -1,10 +1,9 @@
 import z from 'zod';
+import { countSearchCharacters } from '@/shared/utils/build-ts-query';
 
 export const SEARCH_USERS_DEFAULT_LIMIT = 20;
 
 export const SEARCH_USERS_MIN_LENGTH = 2;
-
-export const TSQUERY_SPECIAL_CHARACTERS = /[&|!():*<>'"\\]/g;
 
 export const SearchUsersSchema = z.object({
   search: z
@@ -12,9 +11,7 @@ export const SearchUsersSchema = z.object({
     .trim()
     .max(100, 'Busca deve ter no máximo 100 caracteres')
     .refine(
-      (value) =>
-        value.replace(TSQUERY_SPECIAL_CHARACTERS, '').replace(/\s+/g, '').length >=
-        SEARCH_USERS_MIN_LENGTH,
+      (value) => countSearchCharacters(value) >= SEARCH_USERS_MIN_LENGTH,
       `Busca deve ter no mínimo ${SEARCH_USERS_MIN_LENGTH} caracteres`,
     ),
   cursor: z.uuid('Cursor inválido').optional(),

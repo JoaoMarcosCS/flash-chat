@@ -1,26 +1,12 @@
 import { inject, injectable } from 'tsyringe';
 import { IUserRepository } from '../../repository/IUserRepository';
-import { SearchUsersDTO, TSQUERY_SPECIAL_CHARACTERS } from './search-users.schema';
+import { SearchUsersDTO } from './search-users.schema';
+import { buildTsQuery } from '@/shared/utils/build-ts-query';
 import { PublicUser } from '../../repository/IUserRepository';
 
 export type SearchUsersResponse = {
   data: PublicUser[];
   nextCursor: string | null;
-};
-
-export const buildTsQuery = (search?: string): string | undefined => {
-  if (!search) {
-    return undefined;
-  }
-
-  const tokens = search
-    .toLowerCase()
-    .replace(TSQUERY_SPECIAL_CHARACTERS, ' ')
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((token) => `${token}:*`);
-
-  return tokens.length ? tokens.join(' & ') : undefined;
 };
 
 @injectable()
