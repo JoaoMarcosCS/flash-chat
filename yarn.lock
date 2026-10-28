@@ -458,6 +458,13 @@
   dependencies:
     testcontainers "^10.13.2"
 
+"@testcontainers/rabbitmq@10.13.2":
+  version "10.13.2"
+  resolved "https://registry.yarnpkg.com/@testcontainers/rabbitmq/-/rabbitmq-10.13.2.tgz#25e449f8ef0594bb073cdf217a3d8ddcb892d2eb"
+  integrity sha512-npBKBnq3c6hETmxGZ/gVMke9cc1J/pcftNW9S3WidL48hxFBIPjYNM9FdTfWuoNER/8kuf4xJ8yCuJEYGH3ZAg==
+  dependencies:
+    testcontainers "^10.13.2"
+
 "@tsconfig/node10@^1.0.7":
   version "1.0.12"
   resolved "https://registry.npmjs.org/@tsconfig/node10/-/node10-1.0.12.tgz"

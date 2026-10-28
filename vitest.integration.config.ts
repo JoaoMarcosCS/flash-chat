@@ -17,7 +17,11 @@ export default defineConfig({
     include: ['src/tests/integration/**/*.spec.ts'],
 
     globalSetup: ['./src/tests/integration/global-setup.ts'],
-    setupFiles: ['./src/tests/setup.ts', './src/tests/integration/database.setup.ts'],
+    setupFiles: [
+      './src/tests/setup.ts',
+      './src/tests/integration/database.setup.ts',
+      './src/tests/integration/queue.setup.ts',
+    ],
 
     fileParallelism: false,
     hookTimeout: 120000,

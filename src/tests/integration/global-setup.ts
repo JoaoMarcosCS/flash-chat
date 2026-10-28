@@ -1,21 +1,31 @@
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { RabbitMQContainer, StartedRabbitMQContainer } from '@testcontainers/rabbitmq';
+import type { TestProject } from 'vitest/node';
 
-let container: StartedPostgreSqlContainer;
+const RABBITMQ_AMQP_PORT = 5672;
 
-export async function setup(context: {
-  provide: (key: 'pgConnectionUri', value: string) => void;
-}) {
-  container = await new PostgreSqlContainer('postgres:16-alpine').start();
+let postgres: StartedPostgreSqlContainer;
+let rabbitmq: StartedRabbitMQContainer;
 
-  context.provide('pgConnectionUri', container.getConnectionUri());
+export async function setup(project: TestProject) {
+  [postgres, rabbitmq] = await Promise.all([
+    new PostgreSqlContainer('postgres:16-alpine').start(),
+    new RabbitMQContainer('rabbitmq:4.1-alpine').start(),
+  ]);
+
+  project.provide('pgConnectionUri', postgres.getConnectionUri());
+  project.provide('rabbitmqHost', rabbitmq.getHost());
+  project.provide('rabbitmqPort', rabbitmq.getMappedPort(RABBITMQ_AMQP_PORT));
 }
 
 export async function teardown() {
-  await container.stop();
+  await Promise.all([postgres.stop(), rabbitmq.stop()]);
 }
 
 declare module 'vitest' {
   interface ProvidedContext {
     pgConnectionUri: string;
+    rabbitmqHost: string;
+    rabbitmqPort: number;
   }
 }
