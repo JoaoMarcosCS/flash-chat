@@ -8,14 +8,14 @@ import { ILogger } from '@/infra/logger/logger.interface';
 import { Exchange, QueueName } from '@/shared/enums/queue/queue.enum';
 import { ConnectionRegistry } from './connection-registry';
 
-export type WsFrame = {
+export type WsEvent = {
   type: string;
   data: Record<string, unknown>;
 };
 
 export type WsDelivery = {
   userIds: string[];
-  frame: WsFrame;
+  event: WsEvent;
 };
 
 export const toDelivery = (routingKey: string, payload: unknown): WsDelivery | null => {
@@ -29,7 +29,7 @@ export const toDelivery = (routingKey: string, payload: unknown): WsDelivery | n
     return null;
   }
 
-  return { userIds: participantIds, frame: { type: routingKey, data } };
+  return { userIds: participantIds, event: { type: routingKey, data } };
 };
 
 @injectable()
@@ -60,7 +60,7 @@ export class WsEventsConsumer implements IQueueConsumer {
       return;
     }
 
-    const sent = this.registry.send(delivery.userIds, JSON.stringify(delivery.frame));
+    const sent = this.registry.send(delivery.userIds, JSON.stringify(delivery.event));
 
     this.logger.debug('Event delivered', { routingKey, sent });
   }

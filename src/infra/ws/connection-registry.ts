@@ -30,13 +30,13 @@ export class ConnectionRegistry {
     return this.sockets.get(userId)?.size ?? 0;
   }
 
-  send(userIds: string[], frame: string): number {
+  send(userIds: string[], event: string): number {
     let sent = 0;
 
     for (const userId of new Set(userIds)) {
       for (const socket of this.sockets.get(userId) ?? []) {
         if (socket.readyState === WebSocket.OPEN) {
-          socket.send(frame);
+          socket.send(event);
           sent++;
         }
       }

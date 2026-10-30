@@ -44,7 +44,7 @@ describe('WsEventsConsumer', () => {
     );
   });
 
-  it('should send the frame to the participants', async () => {
+  it('should send the event to the participants', async () => {
     const { registry, consumer } = makeConsumer();
 
     await consumer.consume({
@@ -70,12 +70,12 @@ describe('WsEventsConsumer', () => {
 });
 
 describe('toDelivery', () => {
-  it('should use participantIds as recipients and remove them from the frame', () => {
+  it('should use participantIds as recipients and remove them from the event', () => {
     expect(
       toDelivery('chat.created', { participantIds: ['ana', 'bruno'], chat: { id: 'c1' } }),
     ).toEqual({
       userIds: ['ana', 'bruno'],
-      frame: { type: 'chat.created', data: { chat: { id: 'c1' } } },
+      event: { type: 'chat.created', data: { chat: { id: 'c1' } } },
     });
   });
 

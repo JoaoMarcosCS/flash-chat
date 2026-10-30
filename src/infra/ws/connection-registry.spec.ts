@@ -13,10 +13,10 @@ describe('ConnectionRegistry', () => {
     registry.add('ana', laptop);
     registry.add('bruno', other);
 
-    const sent = registry.send(['ana', 'ana'], 'frame');
+    const sent = registry.send(['ana', 'ana'], 'event');
 
     expect(sent).toBe(2);
-    expect(phone.send).toHaveBeenCalledWith('frame');
+    expect(phone.send).toHaveBeenCalledWith('event');
     expect(laptop.send).toHaveBeenCalledTimes(1);
     expect(other.send).not.toHaveBeenCalled();
   });
@@ -26,7 +26,7 @@ describe('ConnectionRegistry', () => {
     const closing = makeSocket(WebSocket.CLOSING);
     registry.add('ana', closing);
 
-    expect(registry.send(['ana', 'carla'], 'frame')).toBe(0);
+    expect(registry.send(['ana', 'carla'], 'event')).toBe(0);
     expect(closing.send).not.toHaveBeenCalled();
   });
 
