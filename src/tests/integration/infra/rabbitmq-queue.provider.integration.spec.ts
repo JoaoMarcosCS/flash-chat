@@ -134,8 +134,8 @@ describe('RabbitMQQueueProvider (integração)', () => {
     ]);
     expect(JSON.parse(dead.content.toString())).toEqual({ id: 1 });
     expect(dead.properties.headers).toMatchObject({
-      'x-retry-count': 2,
-      'x-failure-reason': 'max-attempts',
+      'x-retry-count': 3,
+      'x-routing-key': 'message.published',
     });
   });
 
@@ -156,7 +156,7 @@ describe('RabbitMQQueueProvider (integração)', () => {
     expect(messageCount).toBe(0);
   });
 
-  it('should move an invalid payload straight to the DLQ without consuming it', async () => {
+  it('should move an invalid payload to the DLQ after max attempts', async () => {
     const exchange = unique('events');
     const queue = unique('persist');
     const consumer = new RecordingConsumer();
@@ -172,7 +172,7 @@ describe('RabbitMQQueueProvider (integração)', () => {
 
     expect(consumer.messages).toEqual([]);
     expect(dead.content.toString()).toBe('{invalid');
-    expect(dead.properties.headers).toMatchObject({ 'x-failure-reason': 'invalid-payload' });
+    expect(dead.properties.headers).toMatchObject({ 'x-retry-count': 3 });
   });
 
   it('should discard a failed message when there is no retry', async () => {

@@ -1,5 +1,5 @@
 import { inject, injectable } from 'tsyringe';
-import { Channel, ChannelModel, ConfirmChannel, ConsumeMessage, connect } from 'amqplib';
+import { ChannelModel, ConfirmChannel, ConsumeMessage, connect } from 'amqplib';
 import {
   ConsumeOptions,
   IQueueConsumer,
@@ -47,11 +47,79 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     consumer: IQueueConsumer<T>,
     options: ConsumeOptions,
   ): Promise<string> {
-    return this.subscribe(consumer, options, async (channel) => {
-      const declared = await channel.assertQueue(queue, queueArguments(options));
+    const { prefetch, durable, exclusive, noAck, retry } = options;
+    const channel = await (await this.getConnection()).createChannel();
 
-      return declared.queue;
-    });
+    channel.on('close', () => this.logger.warn('Consumer channel closed'));
+    channel.on('error', (error) => this.logger.error('Consumer channel error', { error }));
+    await channel.prefetch(prefetch);
+
+    const { queue: name } = await channel.assertQueue(queue, { durable, exclusive });
+
+    if (retry) {
+      await channel.assertQueue(`${name}.dlq`, { durable: true });
+      await channel.assertQueue(`${name}.retry`, {
+        durable: true,
+        deadLetterExchange: '',
+        deadLetterRoutingKey: name,
+        messageTtl: retry.delayMs,
+      });
+    }
+
+    const receive = async (message: ConsumeMessage) => {
+      const headers = message.properties.headers ?? {};
+      const attempt = Number(headers[RETRY_COUNT_HEADER] ?? 0) + 1;
+      const routingKey = String(headers[ROUTING_KEY_HEADER] ?? message.fields.routingKey);
+
+      try {
+        const data: T = JSON.parse(message.content.toString());
+
+        await consumer.consume({ data, routingKey, attempt });
+      } catch (error) {
+        const target = retry && (attempt < retry.maxAttempts ? 'retry' : 'dlq');
+
+        this.logger[target === 'retry' ? 'warn' : 'error'](
+          `Failed to consume (attempt ${attempt})`,
+          {
+            queue: name,
+            target: target ?? 'discarded',
+            content: message.content.toString(),
+            error,
+          },
+        );
+
+        if (target) {
+          channel.sendToQueue(`${name}.${target}`, message.content, {
+            persistent: true,
+            headers: {
+              ...headers,
+              [RETRY_COUNT_HEADER]: attempt,
+              [ROUTING_KEY_HEADER]: routingKey,
+            },
+          });
+        }
+      }
+
+      if (!noAck) {
+        channel.ack(message);
+      }
+    };
+
+    await channel.consume(
+      name,
+      (message) => {
+        if (message) {
+          receive(message).catch((error) =>
+            this.logger.error('Failed to settle message', { queue: name, error }),
+          );
+        }
+      },
+      { noAck },
+    );
+
+    this.logger.info('Consumer started', { queue: name });
+
+    return name;
   }
 
   async consumeExchange<T>(
@@ -61,13 +129,14 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     consumer: IQueueConsumer<T>,
     options: ConsumeOptions,
   ): Promise<string> {
-    return this.subscribe(consumer, options, async (channel) => {
-      await channel.assertExchange(exchange, EXCHANGE_TYPE, { durable: true });
-      const declared = await channel.assertQueue(queue, queueArguments(options));
-      await channel.bindQueue(declared.queue, exchange, routingKey);
+    const name = await this.consume(queue, consumer, options);
+    const channel = await (await this.getConnection()).createChannel();
 
-      return declared.queue;
-    });
+    await channel.assertExchange(exchange, EXCHANGE_TYPE, { durable: true });
+    await channel.bindQueue(name, exchange, routingKey);
+    await channel.close();
+
+    return name;
   }
 
   async close(): Promise<void> {
@@ -155,115 +224,6 @@ export class RabbitMQQueueProvider implements IQueueProvider {
       }
     }
   }
-
-  private async subscribe<T>(
-    consumer: IQueueConsumer<T>,
-    settings: ConsumeOptions,
-    declare: (channel: Channel) => Promise<string>,
-  ): Promise<string> {
-    const channel = await (await this.getConnection()).createChannel();
-
-    channel.on('close', () => this.logger.warn('Consumer channel closed'));
-    channel.on('error', (error) => this.logger.error('Consumer channel error', { error }));
-    await channel.prefetch(settings.prefetch);
-
-    const queue = await declare(channel);
-
-    if (settings.retry) {
-      await channel.assertQueue(`${queue}.dlq`, { durable: true });
-      await channel.assertQueue(`${queue}.retry`, {
-        durable: true,
-        deadLetterExchange: '',
-        deadLetterRoutingKey: queue,
-        messageTtl: settings.retry.delayMs,
-      });
-    }
-
-    await channel.consume(
-      queue,
-      (message) => {
-        if (!message) return;
-
-        this.handle(channel, queue, message, consumer, settings).catch((error) =>
-          this.logger.error('Failed to settle message', { queue, error }),
-        );
-      },
-      { noAck: settings.noAck },
-    );
-
-    this.logger.info('Consumer started', { queue });
-
-    return queue;
-  }
-
-  private async handle<T>(
-    channel: Channel,
-    queue: string,
-    message: ConsumeMessage,
-    consumer: IQueueConsumer<T>,
-    settings: ConsumeOptions,
-  ): Promise<void> {
-    const headers = message.properties.headers ?? {};
-    const attempt = Number(headers[RETRY_COUNT_HEADER] ?? 0) + 1;
-    const routingKey = String(headers[ROUTING_KEY_HEADER] ?? message.fields.routingKey);
-    let data: T;
-
-    try {
-      data = JSON.parse(message.content.toString());
-    } catch (error) {
-      this.logger.error('Invalid payload', { queue, error });
-      this.deadLetter(channel, queue, message, settings, 'invalid-payload');
-      return;
-    }
-
-    try {
-      await consumer.consume({ data, routingKey, attempt });
-    } catch (error) {
-      if (settings.retry && attempt < settings.retry.maxAttempts) {
-        this.logger.warn(`Failed to consume (attempt ${attempt}/${settings.retry.maxAttempts})`, {
-          queue,
-          error,
-        });
-        channel.sendToQueue(`${queue}.retry`, message.content, {
-          persistent: true,
-          headers: { ...headers, [RETRY_COUNT_HEADER]: attempt, [ROUTING_KEY_HEADER]: routingKey },
-        });
-      } else {
-        this.logger.error('Failed to consume, no attempts left', { queue, data, error });
-        this.deadLetter(channel, queue, message, settings, 'max-attempts');
-        return;
-      }
-    }
-
-    if (!settings.noAck) {
-      channel.ack(message);
-    }
-  }
-
-  private deadLetter(
-    channel: Channel,
-    queue: string,
-    message: ConsumeMessage,
-    settings: ConsumeOptions,
-    reason: string,
-  ): void {
-    if (settings.retry) {
-      channel.sendToQueue(`${queue}.dlq`, message.content, {
-        persistent: true,
-        headers: {
-          ...message.properties.headers,
-          'x-failure-reason': reason,
-          'x-failed-at': new Date().toISOString(),
-        },
-      });
-    }
-
-    if (!settings.noAck) {
-      channel.ack(message);
-    }
-  }
 }
-
-const queueArguments = ({ durable, exclusive }: ConsumeOptions) => ({ durable, exclusive });
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
