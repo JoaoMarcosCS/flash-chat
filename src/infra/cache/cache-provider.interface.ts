@@ -5,6 +5,8 @@ export interface ICacheProvider {
    */
   get<T>(key: string): Promise<T | null>;
 
+  getAndDelete<T>(key: string): Promise<T | null>;
+
   /**
    * Grava um valor no cache.
    * @param key        - chave de lookup

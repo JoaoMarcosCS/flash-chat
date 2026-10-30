@@ -89,6 +89,20 @@ export class RedisCacheProvider implements ICacheProvider {
     }
   }
 
+  async getAndDelete<T>(key: string): Promise<T | null> {
+    if (!this.isReady) return null;
+    try {
+      const raw = await this.client.getDel(key);
+
+      if (raw === null || raw === undefined) return null;
+
+      return JSON.parse(raw as string) as T;
+    } catch (err) {
+      this.logger.error('getAndDelete error', { err, key });
+      return null;
+    }
+  }
+
   async set(key: string, value: unknown, ttlSeconds = 60): Promise<void> {
     if (!this.isReady) return;
     try {
