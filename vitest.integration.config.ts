@@ -21,6 +21,7 @@ export default defineConfig({
       './src/tests/setup.ts',
       './src/tests/integration/database.setup.ts',
       './src/tests/integration/queue.setup.ts',
+      './src/tests/integration/cache.setup.ts',
     ],
 
     fileParallelism: false,
