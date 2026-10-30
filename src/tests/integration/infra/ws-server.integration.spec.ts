@@ -13,7 +13,7 @@ import { ConnectionRegistry } from '@/infra/ws/connection-registry';
 import { WsEventsConsumer } from '@/infra/ws/ws-events.consumer';
 import { createWsServer, TOKEN_EXPIRED_CLOSE_CODE } from '@/infra/ws';
 
-type Client = { socket: WebSocket; frames: unknown[] };
+type Client = { socket: WebSocket; events: unknown[] };
 
 const makeUser = (name: string) => ({ id: uuidv7(), name, nickname: name.toLowerCase() });
 
@@ -41,10 +41,10 @@ describe('WebSocket server (integração)', () => {
   const connect = (query: string): Promise<Client> =>
     new Promise((resolve, reject) => {
       const socket = new WebSocket(`${url}${query}`);
-      const client: Client = { socket, frames: [] };
+      const client: Client = { socket, events: [] };
 
       clients.push(socket);
-      socket.on('message', (data) => client.frames.push(JSON.parse(data.toString())));
+      socket.on('message', (data) => client.events.push(JSON.parse(data.toString())));
       socket.on('open', () => resolve(client));
       socket.on('unexpected-response', (_, response) =>
         reject(new Error(`status ${response.statusCode}`)),
@@ -86,13 +86,13 @@ describe('WebSocket server (integração)', () => {
       chat: { id: 'chat-1' },
     });
 
-    await waitFor(() => [anaPhone, anaLaptop, brunoPhone].every((c) => c.frames.length === 1));
+    await waitFor(() => [anaPhone, anaLaptop, brunoPhone].every((c) => c.events.length === 1));
 
-    const frame = { type: 'chat.created', data: { chat: { id: 'chat-1' } } };
-    expect(anaPhone.frames).toEqual([frame]);
-    expect(anaLaptop.frames).toEqual([frame]);
-    expect(brunoPhone.frames).toEqual([frame]);
-    expect(carlaPhone.frames).toEqual([]);
+    const event = { type: 'chat.created', data: { chat: { id: 'chat-1' } } };
+    expect(anaPhone.events).toEqual([event]);
+    expect(anaLaptop.events).toEqual([event]);
+    expect(brunoPhone.events).toEqual([event]);
+    expect(carlaPhone.events).toEqual([]);
   });
 
   it('should remove the socket from the registry when it closes', async () => {
