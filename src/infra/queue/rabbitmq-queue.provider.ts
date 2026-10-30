@@ -18,15 +18,6 @@ const RETRY_COUNT_HEADER = 'x-retry-count';
 
 const ROUTING_KEY_HEADER = 'x-routing-key';
 
-const DEFAULT_CONSUME_OPTIONS = {
-  prefetch: 1,
-  durable: true,
-  exclusive: false,
-  noAck: false,
-};
-
-type ConsumeSettings = typeof DEFAULT_CONSUME_OPTIONS & Pick<ConsumeOptions, 'retry'>;
-
 @injectable()
 export class RabbitMQQueueProvider implements IQueueProvider {
   private connection: Promise<ChannelModel> | null = null;
@@ -54,10 +45,10 @@ export class RabbitMQQueueProvider implements IQueueProvider {
   async consume<T>(
     queue: string,
     consumer: IQueueConsumer<T>,
-    options: ConsumeOptions = {},
+    options: ConsumeOptions,
   ): Promise<string> {
-    return this.subscribe(consumer, options, async (channel, settings) => {
-      const declared = await channel.assertQueue(queue, queueArguments(settings));
+    return this.subscribe(consumer, options, async (channel) => {
+      const declared = await channel.assertQueue(queue, queueArguments(options));
 
       return declared.queue;
     });
@@ -68,11 +59,11 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     routingKey: string,
     queue: string,
     consumer: IQueueConsumer<T>,
-    options: ConsumeOptions = {},
+    options: ConsumeOptions,
   ): Promise<string> {
-    return this.subscribe(consumer, options, async (channel, settings) => {
+    return this.subscribe(consumer, options, async (channel) => {
       await channel.assertExchange(exchange, EXCHANGE_TYPE, { durable: true });
-      const declared = await channel.assertQueue(queue, queueArguments(settings));
+      const declared = await channel.assertQueue(queue, queueArguments(options));
       await channel.bindQueue(declared.queue, exchange, routingKey);
 
       return declared.queue;
@@ -167,17 +158,16 @@ export class RabbitMQQueueProvider implements IQueueProvider {
 
   private async subscribe<T>(
     consumer: IQueueConsumer<T>,
-    options: ConsumeOptions,
-    declare: (channel: Channel, settings: ConsumeSettings) => Promise<string>,
+    settings: ConsumeOptions,
+    declare: (channel: Channel) => Promise<string>,
   ): Promise<string> {
-    const settings: ConsumeSettings = { ...DEFAULT_CONSUME_OPTIONS, ...options };
     const channel = await (await this.getConnection()).createChannel();
 
     channel.on('close', () => this.logger.warn('Consumer channel closed'));
     channel.on('error', (error) => this.logger.error('Consumer channel error', { error }));
     await channel.prefetch(settings.prefetch);
 
-    const queue = await declare(channel, settings);
+    const queue = await declare(channel);
 
     if (settings.retry) {
       await channel.assertQueue(`${queue}.dlq`, { durable: true });
@@ -211,7 +201,7 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     queue: string,
     message: ConsumeMessage,
     consumer: IQueueConsumer<T>,
-    settings: ConsumeSettings,
+    settings: ConsumeOptions,
   ): Promise<void> {
     const headers = message.properties.headers ?? {};
     const attempt = Number(headers[RETRY_COUNT_HEADER] ?? 0) + 1;
@@ -254,7 +244,7 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     channel: Channel,
     queue: string,
     message: ConsumeMessage,
-    settings: ConsumeSettings,
+    settings: ConsumeOptions,
     reason: string,
   ): void {
     if (settings.retry) {
@@ -274,9 +264,6 @@ export class RabbitMQQueueProvider implements IQueueProvider {
   }
 }
 
-const queueArguments = ({ durable, exclusive }: ConsumeSettings) => ({
-  durable: exclusive ? false : durable,
-  exclusive,
-});
+const queueArguments = ({ durable, exclusive }: ConsumeOptions) => ({ durable, exclusive });
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

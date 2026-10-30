@@ -61,7 +61,9 @@ const getFrom = async (queue: string) => {
   }
 };
 
-const retry = { delayMs: 100, maxAttempts: 3 };
+const durableOptions = { prefetch: 1, durable: true, exclusive: false, noAck: false };
+
+const retryOptions = { ...durableOptions, retry: { delayMs: 100, maxAttempts: 3 } };
 
 describe('RabbitMQQueueProvider (integração)', () => {
   const provider = new RabbitMQQueueProvider(logger);
@@ -75,8 +77,16 @@ describe('RabbitMQQueueProvider (integração)', () => {
     const persist = new RecordingConsumer();
     const delivery = new RecordingConsumer();
 
-    await provider.consumeExchange(exchange, 'message.published', unique('persist'), persist);
+    await provider.consumeExchange(
+      exchange,
+      'message.published',
+      unique('persist'),
+      persist,
+      durableOptions,
+    );
     const exclusive = await provider.consumeExchange(exchange, '#', '', delivery, {
+      ...durableOptions,
+      durable: false,
       exclusive: true,
     });
 
@@ -99,7 +109,7 @@ describe('RabbitMQQueueProvider (integração)', () => {
     const queue = unique('direct');
     const consumer = new RecordingConsumer();
 
-    await provider.consume(queue, consumer);
+    await provider.consume(queue, consumer, durableOptions);
     await provider.publish(queue, { id: 1 });
 
     await waitFor(() => consumer.messages.length === 1);
@@ -112,7 +122,7 @@ describe('RabbitMQQueueProvider (integração)', () => {
     const queue = unique('persist');
     const consumer = new RecordingConsumer(Infinity);
 
-    await provider.consumeExchange(exchange, 'message.published', queue, consumer, { retry });
+    await provider.consumeExchange(exchange, 'message.published', queue, consumer, retryOptions);
     await provider.publishExchange(exchange, 'message.published', { id: 1 });
 
     const dead = await getFrom(`${queue}.dlq`);
@@ -134,7 +144,7 @@ describe('RabbitMQQueueProvider (integração)', () => {
     const queue = unique('persist');
     const consumer = new RecordingConsumer(1);
 
-    await provider.consumeExchange(exchange, 'message.published', queue, consumer, { retry });
+    await provider.consumeExchange(exchange, 'message.published', queue, consumer, retryOptions);
     await provider.publishExchange(exchange, 'message.published', { id: 1 });
 
     await waitFor(() => consumer.messages.length === 2);
@@ -151,7 +161,7 @@ describe('RabbitMQQueueProvider (integração)', () => {
     const queue = unique('persist');
     const consumer = new RecordingConsumer();
 
-    await provider.consumeExchange(exchange, 'message.published', queue, consumer, { retry });
+    await provider.consumeExchange(exchange, 'message.published', queue, consumer, retryOptions);
 
     const raw = await openRawChannel();
     raw.channel.publish(exchange, 'message.published', Buffer.from('{invalid'));
@@ -169,7 +179,7 @@ describe('RabbitMQQueueProvider (integração)', () => {
     const queue = unique('direct');
     const consumer = new RecordingConsumer(1);
 
-    await provider.consume(queue, consumer);
+    await provider.consume(queue, consumer, durableOptions);
     await provider.publish(queue, { id: 1 });
     await provider.publish(queue, { id: 2 });
 

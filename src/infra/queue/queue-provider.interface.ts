@@ -1,8 +1,8 @@
 export type ConsumeOptions = {
-  prefetch?: number;
-  durable?: boolean;
-  exclusive?: boolean;
-  noAck?: boolean;
+  prefetch: number;
+  durable: boolean;
+  exclusive: boolean;
+  noAck: boolean;
   retry?: {
     delayMs: number;
     maxAttempts: number;
@@ -22,13 +22,13 @@ export interface IQueueConsumer<T = unknown> {
 export interface IQueueProvider {
   publish(queue: string, data: unknown): Promise<void>;
   publishExchange(exchange: string, routingKey: string, data: unknown): Promise<void>;
-  consume<T>(queue: string, consumer: IQueueConsumer<T>, options?: ConsumeOptions): Promise<string>;
+  consume<T>(queue: string, consumer: IQueueConsumer<T>, options: ConsumeOptions): Promise<string>;
   consumeExchange<T>(
     exchange: string,
     routingKey: string,
     queue: string,
     consumer: IQueueConsumer<T>,
-    options?: ConsumeOptions,
+    options: ConsumeOptions,
   ): Promise<string>;
   close(): Promise<void>;
 }

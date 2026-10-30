@@ -45,7 +45,12 @@ export class WsEventsConsumer implements IQueueConsumer {
   }
 
   async start(): Promise<void> {
-    await this.queue.consumeExchange(Exchange.EVENTS, '#', '', this, { exclusive: true });
+    await this.queue.consumeExchange(Exchange.EVENTS, '#', '', this, {
+      prefetch: 1,
+      durable: false,
+      exclusive: true,
+      noAck: false,
+    });
   }
 
   async consume({ data, routingKey }: QueueMessage<unknown>): Promise<void> {

@@ -36,7 +36,10 @@ describe('WsEventsConsumer', () => {
     await consumer.start();
 
     expect(queue.consumeExchange).toHaveBeenCalledWith(Exchange.EVENTS, '#', '', consumer, {
+      prefetch: 1,
+      durable: false,
       exclusive: true,
+      noAck: false,
     });
   });
 
