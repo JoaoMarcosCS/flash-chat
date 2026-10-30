@@ -2,6 +2,7 @@ import { createDocument } from 'zod-openapi';
 import { env } from '@/shared/environment/env';
 import { usersPaths } from './users/users.docs';
 import { chatsPaths } from './chats/chats.docs';
+import { messagesPaths } from './messages/messages.docs';
 
 export const openApiDocument = createDocument({
   openapi: '3.1.0',
@@ -18,5 +19,6 @@ export const openApiDocument = createDocument({
   paths: {
     ...usersPaths,
     ...chatsPaths,
+    ...messagesPaths,
   },
 });

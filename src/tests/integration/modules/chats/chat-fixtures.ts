@@ -53,7 +53,7 @@ export const sendMessage = async (chatId: string, sender: TestUser, content: str
 
 export const bearer = (user: TestUser) => `Bearer ${user.token}`;
 
-export const listenChatCreated = async () => {
+export const listenEvents = async (routingKey: RoutingKey) => {
   const connection = await connect({
     hostname: env.RABBITMQ_HOST,
     port: env.RABBITMQ_PORT,
@@ -63,7 +63,7 @@ export const listenChatCreated = async () => {
   const channel = await connection.createChannel();
   await channel.assertExchange(Exchange.EVENTS, 'topic', { durable: true });
   const { queue } = await channel.assertQueue('', { exclusive: true });
-  await channel.bindQueue(queue, Exchange.EVENTS, RoutingKey.CHAT_CREATED);
+  await channel.bindQueue(queue, Exchange.EVENTS, routingKey);
 
   const received = async (): Promise<unknown[]> => {
     const events: unknown[] = [];
@@ -79,3 +79,5 @@ export const listenChatCreated = async () => {
 
   return { received, close: () => connection.close() };
 };
+
+export const listenChatCreated = () => listenEvents(RoutingKey.CHAT_CREATED);
