@@ -61,7 +61,7 @@ const getFrom = async (queue: string) => {
   }
 };
 
-const durableOptions = { prefetch: 1, durable: true, exclusive: false, noAck: false };
+const durableOptions = { prefetch: 1, durable: true, noAck: false };
 
 const retryOptions = { ...durableOptions, retry: { delayMs: 100, maxAttempts: 3 } };
 
@@ -72,7 +72,7 @@ describe('RabbitMQQueueProvider (integração)', () => {
     await provider.close();
   });
 
-  it('should route by routing key and deliver everything to an exclusive # queue', async () => {
+  it('should route by routing key and deliver everything to a # queue', async () => {
     const exchange = unique('events');
     const persist = new RecordingConsumer();
     const delivery = new RecordingConsumer();
@@ -84,11 +84,7 @@ describe('RabbitMQQueueProvider (integração)', () => {
       persist,
       durableOptions,
     );
-    const exclusive = await provider.consumeExchange(exchange, '#', '', delivery, {
-      ...durableOptions,
-      durable: false,
-      exclusive: true,
-    });
+    await provider.consumeExchange(exchange, '#', unique('ws'), delivery, durableOptions);
 
     await provider.publishExchange(exchange, 'message.published', { id: 1 });
     await provider.publishExchange(exchange, 'chat.created', { id: 2 });
@@ -102,7 +98,6 @@ describe('RabbitMQQueueProvider (integração)', () => {
       'message.published',
       'chat.created',
     ]);
-    expect(exclusive).toMatch(/^amq\.gen-/);
   });
 
   it('should publish to a queue and consume it', async () => {

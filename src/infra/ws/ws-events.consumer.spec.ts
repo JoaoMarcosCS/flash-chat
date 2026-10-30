@@ -3,7 +3,7 @@ import { toDelivery, WsEventsConsumer } from './ws-events.consumer';
 import { ConnectionRegistry } from './connection-registry';
 import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
-import { Exchange } from '@/shared/enums/queue/queue.enum';
+import { Exchange, QueueName } from '@/shared/enums/queue/queue.enum';
 
 const mockQueueProvider = (): IQueueProvider => ({
   publish: vi.fn(),
@@ -30,17 +30,18 @@ const makeConsumer = () => {
 };
 
 describe('WsEventsConsumer', () => {
-  it('should consume every event through an exclusive queue', async () => {
+  it('should consume every event through the ws events queue', async () => {
     const { queue, consumer } = makeConsumer();
 
     await consumer.start();
 
-    expect(queue.consumeExchange).toHaveBeenCalledWith(Exchange.EVENTS, '#', '', consumer, {
-      prefetch: 1,
-      durable: false,
-      exclusive: true,
-      noAck: false,
-    });
+    expect(queue.consumeExchange).toHaveBeenCalledWith(
+      Exchange.EVENTS,
+      '#',
+      QueueName.WS_EVENTS,
+      consumer,
+      { prefetch: 1, durable: true, noAck: false },
+    );
   });
 
   it('should send the frame to the participants', async () => {

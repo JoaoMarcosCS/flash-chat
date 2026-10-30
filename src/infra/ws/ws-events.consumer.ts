@@ -5,7 +5,7 @@ import {
   QueueMessage,
 } from '@/infra/queue/queue-provider.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
-import { Exchange } from '@/shared/enums/queue/queue.enum';
+import { Exchange, QueueName } from '@/shared/enums/queue/queue.enum';
 import { ConnectionRegistry } from './connection-registry';
 
 export type WsFrame = {
@@ -45,10 +45,9 @@ export class WsEventsConsumer implements IQueueConsumer {
   }
 
   async start(): Promise<void> {
-    await this.queue.consumeExchange(Exchange.EVENTS, '#', '', this, {
+    await this.queue.consumeExchange(Exchange.EVENTS, '#', QueueName.WS_EVENTS, this, {
       prefetch: 1,
-      durable: false,
-      exclusive: true,
+      durable: true,
       noAck: false,
     });
   }

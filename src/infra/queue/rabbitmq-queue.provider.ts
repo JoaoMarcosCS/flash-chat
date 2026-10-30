@@ -47,21 +47,21 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     consumer: IQueueConsumer<T>,
     options: ConsumeOptions,
   ): Promise<string> {
-    const { prefetch, durable, exclusive, noAck, retry } = options;
+    const { prefetch, durable, noAck, retry } = options;
     const channel = await (await this.getConnection()).createChannel();
 
     channel.on('close', () => this.logger.warn('Consumer channel closed'));
     channel.on('error', (error) => this.logger.error('Consumer channel error', { error }));
     await channel.prefetch(prefetch);
 
-    const { queue: name } = await channel.assertQueue(queue, { durable, exclusive });
+    await channel.assertQueue(queue, { durable });
 
     if (retry) {
-      await channel.assertQueue(`${name}.dlq`, { durable: true });
-      await channel.assertQueue(`${name}.retry`, {
+      await channel.assertQueue(`${queue}.dlq`, { durable: true });
+      await channel.assertQueue(`${queue}.retry`, {
         durable: true,
         deadLetterExchange: '',
-        deadLetterRoutingKey: name,
+        deadLetterRoutingKey: queue,
         messageTtl: retry.delayMs,
       });
     }
@@ -81,7 +81,7 @@ export class RabbitMQQueueProvider implements IQueueProvider {
         this.logger[target === 'retry' ? 'warn' : 'error'](
           `Failed to consume (attempt ${attempt})`,
           {
-            queue: name,
+            queue,
             target: target ?? 'discarded',
             content: message.content.toString(),
             error,
@@ -89,7 +89,7 @@ export class RabbitMQQueueProvider implements IQueueProvider {
         );
 
         if (target) {
-          channel.sendToQueue(`${name}.${target}`, message.content, {
+          channel.sendToQueue(`${queue}.${target}`, message.content, {
             persistent: true,
             headers: {
               ...headers,
@@ -106,20 +106,20 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     };
 
     await channel.consume(
-      name,
+      queue,
       (message) => {
         if (message) {
           receive(message).catch((error) =>
-            this.logger.error('Failed to settle message', { queue: name, error }),
+            this.logger.error('Failed to settle message', { queue, error }),
           );
         }
       },
       { noAck },
     );
 
-    this.logger.info('Consumer started', { queue: name });
+    this.logger.info('Consumer started', { queue });
 
-    return name;
+    return queue;
   }
 
   async consumeExchange<T>(
@@ -129,14 +129,14 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     consumer: IQueueConsumer<T>,
     options: ConsumeOptions,
   ): Promise<string> {
-    const name = await this.consume(queue, consumer, options);
     const channel = await (await this.getConnection()).createChannel();
 
     await channel.assertExchange(exchange, EXCHANGE_TYPE, { durable: true });
-    await channel.bindQueue(name, exchange, routingKey);
+    await channel.assertQueue(queue, { durable: options.durable });
+    await channel.bindQueue(queue, exchange, routingKey);
     await channel.close();
 
-    return name;
+    return this.consume(queue, consumer, options);
   }
 
   async close(): Promise<void> {

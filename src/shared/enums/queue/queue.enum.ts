@@ -10,4 +10,5 @@ export enum RoutingKey {
 
 export enum QueueName {
   MESSAGES_PERSIST = 'messages.persist',
+  WS_EVENTS = 'ws.events',
 }

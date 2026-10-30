@@ -1,7 +1,6 @@
 export type ConsumeOptions = {
   prefetch: number;
   durable: boolean;
-  exclusive: boolean;
   noAck: boolean;
   retry?: {
     delayMs: number;
