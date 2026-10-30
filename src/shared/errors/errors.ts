@@ -49,3 +49,9 @@ export class TooManyRequestsException extends AppException {
     super(message, 429);
   }
 }
+
+export class ServiceUnavailableException extends AppException {
+  constructor(message: string) {
+    super(message, 503);
+  }
+}
