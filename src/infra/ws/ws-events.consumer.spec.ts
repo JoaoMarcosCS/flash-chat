@@ -9,7 +9,7 @@ const mockQueueProvider = (): IQueueProvider => ({
   publish: vi.fn(),
   publishExchange: vi.fn(),
   consume: vi.fn(),
-  consumeExchange: vi.fn().mockResolvedValue('amq.gen-1'),
+  consumeExchange: vi.fn().mockResolvedValue(undefined),
   close: vi.fn(),
 });
 

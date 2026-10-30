@@ -46,7 +46,7 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     queue: string,
     consumer: IQueueConsumer<T>,
     options: ConsumeOptions,
-  ): Promise<string> {
+  ): Promise<void> {
     const { prefetch, durable, noAck, retry } = options;
     const channel = await (await this.getConnection()).createChannel();
 
@@ -118,8 +118,6 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     );
 
     this.logger.info('Consumer started', { queue });
-
-    return queue;
   }
 
   async consumeExchange<T>(
@@ -128,7 +126,7 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     queue: string,
     consumer: IQueueConsumer<T>,
     options: ConsumeOptions,
-  ): Promise<string> {
+  ): Promise<void> {
     const channel = await (await this.getConnection()).createChannel();
 
     await channel.assertExchange(exchange, EXCHANGE_TYPE, { durable: true });
@@ -136,7 +134,7 @@ export class RabbitMQQueueProvider implements IQueueProvider {
     await channel.bindQueue(queue, exchange, routingKey);
     await channel.close();
 
-    return this.consume(queue, consumer, options);
+    await this.consume(queue, consumer, options);
   }
 
   async close(): Promise<void> {

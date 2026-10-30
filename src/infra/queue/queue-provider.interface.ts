@@ -21,13 +21,13 @@ export interface IQueueConsumer<T = unknown> {
 export interface IQueueProvider {
   publish(queue: string, data: unknown): Promise<void>;
   publishExchange(exchange: string, routingKey: string, data: unknown): Promise<void>;
-  consume<T>(queue: string, consumer: IQueueConsumer<T>, options: ConsumeOptions): Promise<string>;
+  consume<T>(queue: string, consumer: IQueueConsumer<T>, options: ConsumeOptions): Promise<void>;
   consumeExchange<T>(
     exchange: string,
     routingKey: string,
     queue: string,
     consumer: IQueueConsumer<T>,
     options: ConsumeOptions,
-  ): Promise<string>;
+  ): Promise<void>;
   close(): Promise<void>;
 }
