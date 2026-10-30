@@ -3,6 +3,8 @@ import { IUserRepository } from '@/modules/users/repository/user-repository.inte
 import { UserRepository } from '@/modules/users/repository/user.repository';
 import { IChatRepository } from '@/modules/chats/repository/chat-repository.interface';
 import { ChatRepository } from '@/modules/chats/repository/chat.repository';
+import { IMessageRepository } from '@/modules/messages/repository/message-repository.interface';
+import { MessageRepository } from '@/modules/messages/repository/message.repository';
 import { ICacheProvider } from '@/infra/cache/cache-provider.interface';
 import { RedisCacheProvider } from '@/infra/cache/redis-cache.provider';
 import { ILogger } from '@/infra/logger/logger.interface';
@@ -13,5 +15,6 @@ import { logger } from '@/infra/logger';
 container.registerInstance<ILogger>('ILogger', logger);
 container.registerSingleton<IUserRepository>('IUserRepository', UserRepository);
 container.registerSingleton<IChatRepository>('IChatRepository', ChatRepository);
+container.registerSingleton<IMessageRepository>('IMessageRepository', MessageRepository);
 container.registerSingleton<ICacheProvider>('ICacheProvider', RedisCacheProvider);
 container.registerSingleton<IQueueProvider>('IQueueProvider', RabbitMQQueueProvider);
