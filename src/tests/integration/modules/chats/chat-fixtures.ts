@@ -5,7 +5,8 @@ import { MessageEntity } from '@/modules/messages/entity/message.entity';
 import { UserEntity } from '@/modules/users/entity/user.entity';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { generateTokens } from '@/modules/auth/token/token';
-import { RabbitMQConnection } from '@/infra/queue/rabbitmq-connection.singleton';
+import { connect } from 'amqplib';
+import { env } from '@/shared/environment/env';
 import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 
 export type TestUser = { id: string; name: string; nickname: string; token: string };
@@ -53,7 +54,13 @@ export const sendMessage = async (chatId: string, sender: TestUser, content: str
 export const bearer = (user: TestUser) => `Bearer ${user.token}`;
 
 export const listenChatCreated = async () => {
-  const channel = await (await RabbitMQConnection.getInstance()).getConnection().createChannel();
+  const connection = await connect({
+    hostname: env.RABBITMQ_HOST,
+    port: env.RABBITMQ_PORT,
+    username: env.RABBITMQ_USER,
+    password: env.RABBITMQ_PASS,
+  });
+  const channel = await connection.createChannel();
   await channel.assertExchange(Exchange.EVENTS, 'topic', { durable: true });
   const { queue } = await channel.assertQueue('', { exclusive: true });
   await channel.bindQueue(queue, Exchange.EVENTS, RoutingKey.CHAT_CREATED);
@@ -70,5 +77,5 @@ export const listenChatCreated = async () => {
     return events;
   };
 
-  return { received, close: () => channel.close() };
+  return { received, close: () => connection.close() };
 };

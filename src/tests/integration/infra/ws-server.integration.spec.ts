@@ -6,8 +6,8 @@ import { v7 as uuidv7 } from 'uuid';
 import { WebSocket } from 'ws';
 import { generateTokens } from '@/modules/auth/token/token';
 import { env } from '@/shared/environment/env';
-import { Queue } from '@/infra/queue/queue.provider';
-import { RabbitMQConnection } from '@/infra/queue/rabbitmq-connection.singleton';
+import { RabbitMQQueueProvider } from '@/infra/queue/rabbitmq-queue.provider';
+import { logger } from '@/infra/logger';
 import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 import { ConnectionRegistry } from '@/infra/ws/connection-registry';
 import { WsEventsConsumer } from '@/infra/ws/ws-events.consumer';
@@ -34,6 +34,7 @@ const waitFor = async (condition: () => boolean, timeoutMs = 5000) => {
 describe('WebSocket server (integração)', () => {
   let server: Server;
   let registry: ConnectionRegistry;
+  const queue = new RabbitMQQueueProvider(logger);
   let url: string;
   const clients: WebSocket[] = [];
 
@@ -53,7 +54,7 @@ describe('WebSocket server (integração)', () => {
 
   beforeAll(async () => {
     registry = new ConnectionRegistry();
-    await new WsEventsConsumer(registry).startConsumer();
+    await new WsEventsConsumer(queue, registry, logger).start();
     server = createWsServer(registry);
     await new Promise<void>((resolve) => server.listen(0, resolve));
     url = `ws://localhost:${(server.address() as AddressInfo).port}`;
@@ -62,7 +63,7 @@ describe('WebSocket server (integração)', () => {
   afterAll(async () => {
     clients.forEach((socket) => socket.terminate());
     await new Promise((resolve) => server.close(resolve));
-    await (await RabbitMQConnection.getInstance()).getConnection().close();
+    await queue.close();
   });
 
   it.each([
@@ -80,7 +81,7 @@ describe('WebSocket server (integração)', () => {
     const brunoPhone = await connect(`?token=${tokenFor(bruno)}`);
     const carlaPhone = await connect(`?token=${tokenFor(carla)}`);
 
-    await Queue.publishExchange(Exchange.EVENTS, RoutingKey.CHAT_CREATED, {
+    await queue.publishExchange(Exchange.EVENTS, RoutingKey.CHAT_CREATED, {
       participantIds: [ana.id, bruno.id],
       chat: { id: 'chat-1' },
     });

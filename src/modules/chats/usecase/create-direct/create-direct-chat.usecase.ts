@@ -5,6 +5,7 @@ import { CreateDirectChatDTO } from './create-direct-chat.schema';
 import { publishChatCreated } from '../../event/chat-created.event';
 import { IUserRepository } from '@/modules/users/repository/user-repository.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
+import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { MessageError } from '@/shared/enums/erros.enum';
 import {
@@ -23,6 +24,7 @@ export class CreateDirectChatUseCase {
   constructor(
     @inject('IChatRepository') private chatRepository: IChatRepository,
     @inject('IUserRepository') private userRepository: IUserRepository,
+    @inject('IQueueProvider') private queue: IQueueProvider,
     @inject('ILogger') private logger: ILogger,
   ) {}
 
@@ -70,7 +72,7 @@ export class CreateDirectChatUseCase {
     const response = toChatResponse(chat);
 
     if (created) {
-      await publishChatCreated(response, this.logger);
+      await publishChatCreated(this.queue, response, this.logger);
     }
 
     return { chat: response, created };

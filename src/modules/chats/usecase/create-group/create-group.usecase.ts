@@ -5,6 +5,7 @@ import { CreateGroupDTO } from './create-group.schema';
 import { publishChatCreated } from '../../event/chat-created.event';
 import { IUserRepository } from '@/modules/users/repository/user-repository.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
+import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { MessageError } from '@/shared/enums/erros.enum';
 import {
@@ -18,6 +19,7 @@ export class CreateGroupUseCase {
   constructor(
     @inject('IChatRepository') private chatRepository: IChatRepository,
     @inject('IUserRepository') private userRepository: IUserRepository,
+    @inject('IQueueProvider') private queue: IQueueProvider,
     @inject('ILogger') private logger: ILogger,
   ) {}
 
@@ -53,7 +55,7 @@ export class CreateGroupUseCase {
 
     const response = toChatResponse(chat);
 
-    await publishChatCreated(response, this.logger);
+    await publishChatCreated(this.queue, response, this.logger);
 
     return response;
   }

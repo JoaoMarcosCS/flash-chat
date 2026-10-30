@@ -1,5 +1,7 @@
+import { singleton } from 'tsyringe';
 import { WebSocket } from 'ws';
 
+@singleton()
 export class ConnectionRegistry {
   private sockets = new Map<string, Set<WebSocket>>();
 

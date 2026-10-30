@@ -1,5 +1,5 @@
 import { ChatResponse } from '../mapper/chat.mapper';
-import { Queue } from '@/infra/queue/queue.provider';
+import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
 import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 
@@ -8,14 +8,18 @@ export type ChatCreatedEvent = {
   chat: ChatResponse;
 };
 
-export const publishChatCreated = async (chat: ChatResponse, logger: ILogger): Promise<void> => {
+export const publishChatCreated = async (
+  queue: IQueueProvider,
+  chat: ChatResponse,
+  logger: ILogger,
+): Promise<void> => {
   const event: ChatCreatedEvent = {
     participantIds: chat.participants.map(({ id }) => id),
     chat,
   };
 
   try {
-    await Queue.publishExchange(Exchange.EVENTS, RoutingKey.CHAT_CREATED, event);
+    await queue.publishExchange(Exchange.EVENTS, RoutingKey.CHAT_CREATED, event);
   } catch (error) {
     logger.error('Failed to publish chat.created', { chatId: chat.id, error });
   }

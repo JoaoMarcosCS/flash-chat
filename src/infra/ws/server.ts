@@ -1,3 +1,6 @@
+import 'reflect-metadata';
+import '@/infra/container/index';
+import { container } from 'tsyringe';
 import { env } from '@/shared/environment/env';
 import { logger as rootLogger } from '@/infra/logger';
 import { ConnectionRegistry } from './connection-registry';
@@ -7,11 +10,9 @@ import { createWsServer } from './ws-server';
 const logger = rootLogger.child('WsServer');
 
 async function initializeWsServer() {
-  const registry = new ConnectionRegistry();
+  await container.resolve(WsEventsConsumer).start();
 
-  await new WsEventsConsumer(registry).startConsumer();
-
-  createWsServer(registry).listen(env.WS_PORT, () => {
+  createWsServer(container.resolve(ConnectionRegistry)).listen(env.WS_PORT, () => {
     logger.info(`WebSocket server is running on port ${env.WS_PORT}`);
   });
 }

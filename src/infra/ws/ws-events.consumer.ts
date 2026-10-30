@@ -1,9 +1,12 @@
-import { Queue } from '@/infra/queue/queue.provider';
-import { logger as baseLogger } from '@/infra/logger';
+import { inject, injectable } from 'tsyringe';
+import {
+  IQueueConsumer,
+  IQueueProvider,
+  QueueMessage,
+} from '@/infra/queue/queue-provider.interface';
+import { ILogger } from '@/infra/logger/logger.interface';
 import { Exchange } from '@/shared/enums/queue/queue.enum';
 import { ConnectionRegistry } from './connection-registry';
-
-const logger = baseLogger.child('WsEventsConsumer');
 
 export type WsFrame = {
   type: string;
@@ -29,32 +32,32 @@ export const toDelivery = (routingKey: string, payload: unknown): WsDelivery | n
   return { userIds: participantIds, frame: { type: routingKey, data } };
 };
 
-export class WsEventsConsumer extends Queue {
-  constructor(private registry: ConnectionRegistry) {
-    super();
+@injectable()
+export class WsEventsConsumer implements IQueueConsumer {
+  private logger: ILogger;
+
+  constructor(
+    @inject('IQueueProvider') private queue: IQueueProvider,
+    @inject(ConnectionRegistry) private registry: ConnectionRegistry,
+    @inject('ILogger') logger: ILogger,
+  ) {
+    this.logger = logger.child('WsEventsConsumer');
   }
 
-  async startConsumer(): Promise<void> {
-    const queue = await WsEventsConsumer.consumeExchange(
-      Exchange.EVENTS,
-      '#',
-      '',
-      async (payload, msg) => {
-        const { routingKey } = msg.fields;
-        const delivery = toDelivery(routingKey, payload);
+  async start(): Promise<void> {
+    await this.queue.consumeExchange(Exchange.EVENTS, '#', '', this, { exclusive: true });
+  }
 
-        if (!delivery) {
-          logger.warn('Event without participantIds, discarded', { routingKey });
-          return;
-        }
+  async consume({ data, routingKey }: QueueMessage<unknown>): Promise<void> {
+    const delivery = toDelivery(routingKey, data);
 
-        const sent = this.registry.send(delivery.userIds, JSON.stringify(delivery.frame));
+    if (!delivery) {
+      this.logger.warn('Event without participantIds, discarded', { routingKey });
+      return;
+    }
 
-        logger.debug('Event delivered', { routingKey, sent });
-      },
-      { exclusive: true },
-    );
+    const sent = this.registry.send(delivery.userIds, JSON.stringify(delivery.frame));
 
-    logger.info('WsEventsConsumer started', { queue });
+    this.logger.debug('Event delivered', { routingKey, sent });
   }
 }

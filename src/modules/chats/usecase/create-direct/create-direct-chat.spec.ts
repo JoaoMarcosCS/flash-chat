@@ -1,10 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatDetails, IChatRepository } from '../../repository/chat-repository.interface';
 import { CreateDirectChatUseCase } from './create-direct-chat.usecase';
 import { CreateDirectChatSchema } from './create-direct-chat.schema';
 import { IUserRepository, PublicUser } from '@/modules/users/repository/user-repository.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
-import { Queue } from '@/infra/queue/queue.provider';
+import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
 import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { MessageError } from '@/shared/enums/erros.enum';
@@ -47,6 +47,14 @@ const mockUserRepository = (): IUserRepository => ({
   create: vi.fn(),
 });
 
+const mockQueueProvider = (): IQueueProvider => ({
+  publish: vi.fn(),
+  publishExchange: vi.fn().mockResolvedValue(undefined),
+  consume: vi.fn(),
+  consumeExchange: vi.fn(),
+  close: vi.fn(),
+});
+
 const mockLogger = (): ILogger => ({
   debug: vi.fn(),
   info: vi.fn(),
@@ -60,18 +68,14 @@ describe('CreateDirectChatUseCase', () => {
   let userRepository: IUserRepository;
   let useCase: CreateDirectChatUseCase;
   let logger: ILogger;
-  let publishSpy: ReturnType<typeof vi.spyOn>;
+  let queue: IQueueProvider;
 
   beforeEach(() => {
     chatRepository = mockChatRepository();
     userRepository = mockUserRepository();
     logger = mockLogger();
-    useCase = new CreateDirectChatUseCase(chatRepository, userRepository, logger);
-    publishSpy = vi.spyOn(Queue, 'publishExchange').mockResolvedValue();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
+    queue = mockQueueProvider();
+    useCase = new CreateDirectChatUseCase(chatRepository, userRepository, queue, logger);
   });
 
   it('should create a direct chat and hide participant status', async () => {
@@ -105,14 +109,14 @@ describe('CreateDirectChatUseCase', () => {
   it('should publish chat.created to all participants when the chat is created', async () => {
     const { chat } = await useCase.execute({ participantId }, userId);
 
-    expect(publishSpy).toHaveBeenCalledWith(Exchange.EVENTS, RoutingKey.CHAT_CREATED, {
+    expect(queue.publishExchange).toHaveBeenCalledWith(Exchange.EVENTS, RoutingKey.CHAT_CREATED, {
       participantIds: [userId, participantId],
       chat,
     });
   });
 
   it('should still return the chat when publishing chat.created fails', async () => {
-    publishSpy.mockRejectedValueOnce(new Error('broker down'));
+    vi.mocked(queue.publishExchange).mockRejectedValueOnce(new Error('broker down'));
 
     const result = await useCase.execute({ participantId }, userId);
 
@@ -129,7 +133,7 @@ describe('CreateDirectChatUseCase', () => {
     const result = await useCase.execute({ participantId }, userId);
 
     expect(result.created).toBe(false);
-    expect(publishSpy).not.toHaveBeenCalled();
+    expect(queue.publishExchange).not.toHaveBeenCalled();
   });
 
   it('should reject the user as its own participant', async () => {
@@ -177,7 +181,7 @@ describe('CreateDirectChatUseCase', () => {
     expect(chatRepository.createDirectChat).not.toHaveBeenCalled();
     expect(result.created).toBe(false);
     expect(result.chat.readOnly).toBe(true);
-    expect(publishSpy).not.toHaveBeenCalled();
+    expect(queue.publishExchange).not.toHaveBeenCalled();
   });
 
   it('should not create a chat with a deactivated participant', async () => {

@@ -1,10 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatDetails, IChatRepository } from '../../repository/chat-repository.interface';
 import { CreateGroupUseCase } from './create-group.usecase';
 import { CreateGroupDTO, CreateGroupSchema } from './create-group.schema';
 import { IUserRepository, PublicUser } from '@/modules/users/repository/user-repository.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
-import { Queue } from '@/infra/queue/queue.provider';
+import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
 import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { MessageError } from '@/shared/enums/erros.enum';
@@ -50,6 +50,14 @@ const mockUserRepository = (): IUserRepository => ({
   create: vi.fn(),
 });
 
+const mockQueueProvider = (): IQueueProvider => ({
+  publish: vi.fn(),
+  publishExchange: vi.fn().mockResolvedValue(undefined),
+  consume: vi.fn(),
+  consumeExchange: vi.fn(),
+  close: vi.fn(),
+});
+
 const mockLogger = (): ILogger => ({
   debug: vi.fn(),
   info: vi.fn(),
@@ -66,18 +74,14 @@ describe('CreateGroupUseCase', () => {
   let userRepository: IUserRepository;
   let useCase: CreateGroupUseCase;
   let logger: ILogger;
-  let publishSpy: ReturnType<typeof vi.spyOn>;
+  let queue: IQueueProvider;
 
   beforeEach(() => {
     chatRepository = mockChatRepository();
     userRepository = mockUserRepository();
     logger = mockLogger();
-    useCase = new CreateGroupUseCase(chatRepository, userRepository, logger);
-    publishSpy = vi.spyOn(Queue, 'publishExchange').mockResolvedValue();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
+    queue = mockQueueProvider();
+    useCase = new CreateGroupUseCase(chatRepository, userRepository, queue, logger);
   });
 
   it('should create a group with the initiator', async () => {
@@ -102,14 +106,14 @@ describe('CreateGroupUseCase', () => {
   it('should publish chat.created to all participants', async () => {
     const chat = await useCase.execute(dto, userId);
 
-    expect(publishSpy).toHaveBeenCalledWith(Exchange.EVENTS, RoutingKey.CHAT_CREATED, {
+    expect(queue.publishExchange).toHaveBeenCalledWith(Exchange.EVENTS, RoutingKey.CHAT_CREATED, {
       participantIds: [userId, brunoId, carlaId],
       chat,
     });
   });
 
   it('should still return the group when publishing chat.created fails', async () => {
-    publishSpy.mockRejectedValueOnce(new Error('broker down'));
+    vi.mocked(queue.publishExchange).mockRejectedValueOnce(new Error('broker down'));
 
     const chat = await useCase.execute(dto, userId);
 
