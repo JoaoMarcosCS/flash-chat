@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ChatDetails, IChatRepository } from '../../repository/IChatRepository';
+import { ChatDetails, IChatRepository } from '../../repository/chat-repository.interface';
 import { CreateGroupUseCase } from './create-group.usecase';
 import { CreateGroupDTO, CreateGroupSchema } from './create-group.schema';
-import { IUserRepository, PublicUser } from '@/modules/users/repository/IUserRepository';
-import { ILogger } from '@/infra/logger/ILogger';
+import { IUserRepository, PublicUser } from '@/modules/users/repository/user-repository.interface';
+import { ILogger } from '@/infra/logger/logger.interface';
 import { Queue } from '@/infra/queue/queue.provider';
 import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';

@@ -1,10 +1,10 @@
 import { inject, injectable } from 'tsyringe';
-import { IChatRepository } from '../../repository/IChatRepository';
+import { IChatRepository } from '../../repository/chat-repository.interface';
 import { ChatResponse, toChatResponse } from '../../mapper/chat.mapper';
 import { CreateGroupDTO } from './create-group.schema';
 import { publishChatCreated } from '../../event/chat-created.event';
-import { IUserRepository } from '@/modules/users/repository/IUserRepository';
-import { ILogger } from '@/infra/logger/ILogger';
+import { IUserRepository } from '@/modules/users/repository/user-repository.interface';
+import { ILogger } from '@/infra/logger/logger.interface';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { MessageError } from '@/shared/enums/erros.enum';
 import {

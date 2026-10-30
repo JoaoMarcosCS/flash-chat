@@ -1,6 +1,6 @@
 import { ChatResponse } from '../mapper/chat.mapper';
 import { Queue } from '@/infra/queue/queue.provider';
-import { ILogger } from '@/infra/logger/ILogger';
+import { ILogger } from '@/infra/logger/logger.interface';
 import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 
 export type ChatCreatedEvent = {

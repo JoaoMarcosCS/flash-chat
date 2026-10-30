@@ -1,8 +1,8 @@
 import { inject, injectable } from 'tsyringe';
-import { IUserRepository } from '../../repository/IUserRepository';
+import { IUserRepository } from '../../repository/user-repository.interface';
 import { SearchUsersDTO } from './search-users.schema';
 import { buildTsQuery } from '@/shared/utils/build-ts-query';
-import { PublicUser } from '../../repository/IUserRepository';
+import { PublicUser } from '../../repository/user-repository.interface';
 
 export type SearchUsersResponse = {
   data: PublicUser[];

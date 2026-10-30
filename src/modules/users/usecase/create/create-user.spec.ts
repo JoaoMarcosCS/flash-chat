@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CreateUserData, IUserRepository, PublicUser } from '../../repository/IUserRepository';
+import {
+  CreateUserData,
+  IUserRepository,
+  PublicUser,
+} from '../../repository/user-repository.interface';
 import { CreateUserUseCase } from './create-user.usecase';
 import { CreateUserDTO, CreateUserSchema } from './create-user.schema';
 import { MessageError } from '@/shared/enums/erros.enum';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
-import { ILogger } from '@/infra/logger/ILogger';
+import { ILogger } from '@/infra/logger/logger.interface';
 import { ConflictException } from '@/shared/errors/errors';
 import { hash } from '@/shared/utils/hash';
 

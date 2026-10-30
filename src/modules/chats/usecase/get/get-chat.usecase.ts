@@ -1,5 +1,5 @@
 import { inject, injectable } from 'tsyringe';
-import { IChatRepository } from '../../repository/IChatRepository';
+import { IChatRepository } from '../../repository/chat-repository.interface';
 import { ChatResponse, toChatResponse } from '../../mapper/chat.mapper';
 import { GetChatDTO } from './get-chat.schema';
 import { MessageError } from '@/shared/enums/erros.enum';

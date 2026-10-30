@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JwtPayload, verify } from 'jsonwebtoken';
-import { IUserRepository, PublicUser } from '@/modules/users/repository/IUserRepository';
+import { IUserRepository, PublicUser } from '@/modules/users/repository/user-repository.interface';
 import { MessageError } from '@/shared/enums/erros.enum';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { UnauthorizedException } from '@/shared/errors/errors';

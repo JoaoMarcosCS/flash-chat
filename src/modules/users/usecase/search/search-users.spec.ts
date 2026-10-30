@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { IUserRepository, PublicUser } from '../../repository/IUserRepository';
+import { IUserRepository, PublicUser } from '../../repository/user-repository.interface';
 import { SearchUsersUseCase } from './search-users.usecase';
 import { SEARCH_USERS_DEFAULT_LIMIT, SearchUsersSchema } from './search-users.schema';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';

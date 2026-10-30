@@ -1,5 +1,5 @@
 import { inject, injectable } from 'tsyringe';
-import { IUserRepository } from '@/modules/users/repository/IUserRepository';
+import { IUserRepository } from '@/modules/users/repository/user-repository.interface';
 import { UnauthorizedException } from '@/shared/errors/errors';
 import { MessageError } from '@/shared/enums/erros.enum';
 import { AuthTokens, generateTokens, verifyRefreshToken } from '../../token/token';

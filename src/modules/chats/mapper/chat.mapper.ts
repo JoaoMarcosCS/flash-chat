@@ -1,4 +1,4 @@
-import { ChatDetails, ChatListItem } from '../repository/IChatRepository';
+import { ChatDetails, ChatListItem } from '../repository/chat-repository.interface';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 
 export type ChatResponse = Omit<ChatDetails, 'participants'> & {

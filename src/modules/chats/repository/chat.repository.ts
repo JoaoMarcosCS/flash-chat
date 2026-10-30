@@ -8,7 +8,7 @@ import {
   CreateGroupData,
   FindChatsByParticipantParams,
   IChatRepository,
-} from './IChatRepository';
+} from './chat-repository.interface';
 import { AppDataSource } from '@/infra/database/data-source';
 import { ChatEntity } from '../entity/chat.entity';
 import { ChatParticipantEntity } from '../entity/chat-participant.entity';

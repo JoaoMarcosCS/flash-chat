@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ChatDetails, IChatRepository } from '../../repository/IChatRepository';
+import { ChatDetails, IChatRepository } from '../../repository/chat-repository.interface';
 import { GetChatUseCase } from './get-chat.usecase';
 import { GetChatSchema } from './get-chat.schema';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';

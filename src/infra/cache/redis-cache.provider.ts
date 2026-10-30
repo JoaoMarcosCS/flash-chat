@@ -1,7 +1,7 @@
 import { inject, injectable } from 'tsyringe';
 import { createClient } from 'redis';
-import { ICacheProvider } from './ICacheProvider';
-import { ILogger } from '@/infra/logger/ILogger';
+import { ICacheProvider } from './cache-provider.interface';
+import { ILogger } from '@/infra/logger/logger.interface';
 import { env } from '@/shared/environment/env';
 import {
   BadRequestException,
@@ -167,7 +167,7 @@ export class RedisCacheProvider implements ICacheProvider {
 
     const lockKey = `lock:${key}`;
 
-    let acquired = await this.client.set(lockKey, '1', { NX: true, EX: 5 });
+    const acquired = await this.client.set(lockKey, '1', { NX: true, EX: 5 });
 
     if (!acquired) {
       throw new BadRequestException(

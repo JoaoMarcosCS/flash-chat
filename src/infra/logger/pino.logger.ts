@@ -1,5 +1,5 @@
 import type { Logger } from 'pino';
-import { ILogger, LogData } from './ILogger';
+import { ILogger, LogData } from './logger.interface';
 
 export class PinoLogger implements ILogger {
   constructor(private readonly instance: Logger) {}

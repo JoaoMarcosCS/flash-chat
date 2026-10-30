@@ -1,10 +1,10 @@
 import { inject, injectable } from 'tsyringe';
-import { IUserRepository, PublicUser } from '../../repository/IUserRepository';
+import { IUserRepository, PublicUser } from '../../repository/user-repository.interface';
 import { CreateUserDTO } from './create-user.schema';
 import { ConflictException } from '@/shared/errors/errors';
 import { hash } from '@/shared/utils/hash';
 import { MessageError } from '@/shared/enums/erros.enum';
-import { ILogger } from '@/infra/logger/ILogger';
+import { ILogger } from '@/infra/logger/logger.interface';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 
 @injectable()

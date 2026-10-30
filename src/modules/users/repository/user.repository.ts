@@ -1,6 +1,11 @@
 import { QueryFailedError, Repository } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
-import { CreateUserData, FindUsersByParams, IUserRepository, PublicUser } from './IUserRepository';
+import {
+  CreateUserData,
+  FindUsersByParams,
+  IUserRepository,
+  PublicUser,
+} from './user-repository.interface';
 import { AppDataSource } from '@/infra/database/data-source';
 import { UserEntity } from '../entity/user.entity';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';

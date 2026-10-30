@@ -1,5 +1,5 @@
 import { inject, injectable } from 'tsyringe';
-import { IChatRepository } from '../../repository/IChatRepository';
+import { IChatRepository } from '../../repository/chat-repository.interface';
 import { ChatListItemResponse, toChatListItemResponse } from '../../mapper/chat.mapper';
 import { ListChatsDTO } from './list-chats.schema';
 import { buildTsQuery } from '@/shared/utils/build-ts-query';

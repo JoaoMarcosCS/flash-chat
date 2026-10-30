@@ -1,11 +1,11 @@
 import { container } from 'tsyringe';
-import { IUserRepository } from '@/modules/users/repository/IUserRepository';
+import { IUserRepository } from '@/modules/users/repository/user-repository.interface';
 import { UserRepository } from '@/modules/users/repository/user.repository';
-import { IChatRepository } from '@/modules/chats/repository/IChatRepository';
+import { IChatRepository } from '@/modules/chats/repository/chat-repository.interface';
 import { ChatRepository } from '@/modules/chats/repository/chat.repository';
-import { ICacheProvider } from '@/infra/cache/ICacheProvider';
-import { RedisCacheProvider } from '@/infra/cache/RedisCacheProvider';
-import { ILogger } from '@/infra/logger/ILogger';
+import { ICacheProvider } from '@/infra/cache/cache-provider.interface';
+import { RedisCacheProvider } from '@/infra/cache/redis-cache.provider';
+import { ILogger } from '@/infra/logger/logger.interface';
 import { logger } from '@/infra/logger';
 
 container.registerInstance<ILogger>('ILogger', logger);
