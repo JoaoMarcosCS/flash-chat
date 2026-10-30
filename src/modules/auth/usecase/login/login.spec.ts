@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JwtPayload, verify } from 'jsonwebtoken';
 import { IUserRepository } from '@/modules/users/repository/user-repository.interface';
+import { ICacheProvider } from '@/infra/cache/cache-provider.interface';
 import { UserEntity } from '@/modules/users/entity/user.entity';
 import { MessageError } from '@/shared/enums/erros.enum';
 import { UnauthorizedException } from '@/shared/errors/errors';
@@ -27,14 +28,27 @@ const mockRepository = (): IUserRepository => ({
   create: vi.fn(),
 });
 
+const mockCache = (): ICacheProvider => ({
+  get: vi.fn(),
+  getAndDelete: vi.fn(),
+  set: vi.fn().mockResolvedValue(undefined),
+  invalidate: vi.fn(),
+  invalidateByPrefix: vi.fn(),
+  setLock: vi.fn(),
+  releaseLock: vi.fn(),
+  getWithLock: vi.fn(),
+});
+
 describe('LoginUseCase', () => {
   let repository: IUserRepository;
+  let cache: ICacheProvider;
   let useCase: LoginUseCase;
 
   beforeEach(() => {
     vi.restoreAllMocks();
     repository = mockRepository();
-    useCase = new LoginUseCase(repository);
+    cache = mockCache();
+    useCase = new LoginUseCase(repository, cache);
   });
 
   it('should throw UnauthorizedException when no active user matches the e-mail', async () => {
@@ -46,6 +60,7 @@ describe('LoginUseCase', () => {
     await expect(promise).rejects.toBeInstanceOf(UnauthorizedException);
     await expect(promise).rejects.toThrow(MessageError.INVALID_CREDENTIALS);
     expect(compare).not.toHaveBeenCalled();
+    expect(cache.set).not.toHaveBeenCalled();
   });
 
   it('should throw UnauthorizedException when the password does not match', async () => {
@@ -79,9 +94,17 @@ describe('LoginUseCase', () => {
   it('should return a refresh token for the user', async () => {
     vi.spyOn(hash, 'compare').mockResolvedValueOnce(true);
 
-    const { refreshToken } = await useCase.execute(mockLoginDTO);
+    const { refreshToken, sessionId } = await useCase.execute(mockLoginDTO);
 
-    expect(verifyRefreshToken(refreshToken)).toBe(user.id);
+    expect(verifyRefreshToken(refreshToken)).toEqual({ userId: user.id, sessionId });
+  });
+
+  it('should save the session with the refresh token lifetime', async () => {
+    vi.spyOn(hash, 'compare').mockResolvedValueOnce(true);
+
+    const { sessionId } = await useCase.execute(mockLoginDTO);
+
+    expect(cache.set).toHaveBeenCalledWith(`auth:refresh:${sessionId}`, user.id, 7 * 24 * 60 * 60);
   });
 });
 
