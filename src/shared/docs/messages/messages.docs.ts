@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { ZodOpenApiPathsObject } from 'zod-openapi';
 import { SendMessageSchema } from '@/modules/messages/usecase/send/send-message.schema';
+import { ListMessagesSchema } from '@/modules/messages/usecase/list/list-messages.schema';
 import { errorResponse } from '../common/error.docs';
 
 const SentMessageSchema = z
@@ -10,8 +11,43 @@ const SentMessageSchema = z
   })
   .meta({ id: 'SentMessage' });
 
+const ChatMessageSchema = z
+  .object({
+    id: z.uuid(),
+    content: z.string(),
+    createdAt: z.iso.datetime(),
+    sender: z.object({ id: z.uuid(), name: z.string() }),
+  })
+  .meta({ id: 'ChatMessage' });
+
+const ListMessagesResponseSchema = z
+  .object({
+    data: z.array(ChatMessageSchema),
+    nextCursor: z.uuid().nullable(),
+  })
+  .meta({ id: 'ListMessagesResponse' });
+
 export const messagesPaths: ZodOpenApiPathsObject = {
   '/chats/{id}/messages': {
+    get: {
+      tags: ['Messages'],
+      summary: 'Lista as Messages de um Chat, da mais recente para a mais antiga',
+      security: [{ bearerAuth: [] }],
+      requestParams: {
+        path: ListMessagesSchema.pick({ id: true }),
+        query: ListMessagesSchema.omit({ id: true }),
+      },
+      responses: {
+        '200': {
+          description: 'Página de Messages',
+          content: { 'application/json': { schema: ListMessagesResponseSchema } },
+        },
+        '400': errorResponse('Chat, limite ou cursor inválido'),
+        '401': errorResponse('Token ausente ou inválido'),
+        '404': errorResponse('Chat inexistente ou o User não é Participant'),
+        '500': errorResponse('Erro interno'),
+      },
+    },
     post: {
       tags: ['Messages'],
       summary: 'Envia uma Message a um Chat de que o User é Participant',
