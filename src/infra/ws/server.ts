@@ -5,7 +5,7 @@ import { env } from '@/shared/environment/env';
 import { logger as rootLogger } from '@/infra/logger';
 import { ConnectionRegistry } from './connection-registry';
 import { WsEventsConsumer } from './ws-events.consumer';
-import { createWsServer } from './ws-server';
+import { createWsServer } from '.';
 
 const logger = rootLogger.child('WsServer');
 

@@ -11,7 +11,7 @@ import { logger } from '@/infra/logger';
 import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 import { ConnectionRegistry } from '@/infra/ws/connection-registry';
 import { WsEventsConsumer } from '@/infra/ws/ws-events.consumer';
-import { createWsServer, TOKEN_EXPIRED_CLOSE_CODE } from '@/infra/ws/ws-server';
+import { createWsServer, TOKEN_EXPIRED_CLOSE_CODE } from '@/infra/ws';
 
 type Client = { socket: WebSocket; frames: unknown[] };
 
