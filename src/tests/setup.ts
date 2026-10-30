@@ -19,6 +19,7 @@ import 'reflect-metadata';
 // sem depender de um arquivo .env real.
 // Isso garante que os testes sejam isolados e reproduzíveis.
 process.env.API_PORT = '3333';
+process.env.WS_PORT = '3334';
 process.env.NODE_VERSION = '20';
 process.env.ENVIRONMENT = 'test';
 process.env.DB_HOST = 'localhost';

@@ -8,6 +8,7 @@ dotenv.config({
 
 const envSchema = z.object({
   API_PORT: z.preprocess((val) => Number(val), z.number()),
+  WS_PORT: z.coerce.number().default(3001),
   NODE_VERSION: z.string(),
   ENVIRONMENT: z.enum(['development', 'production', 'test', 'local']),
   DB_HOST: z.string(),
