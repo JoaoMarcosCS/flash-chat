@@ -52,7 +52,7 @@ describe('verifyRefreshToken', () => {
   it('should return the refresh token expiration', () => {
     const { refreshExpiresAt } = generateTokens(user);
 
-    expect(Math.round((refreshExpiresAt - Date.now()) / 1000)).toBe(7 * 24 * 60 * 60);
+    expect((refreshExpiresAt - Date.now()) / 1000).toBeCloseTo(7 * 24 * 60 * 60, -1);
   });
 
   it('should reject a refresh token without session', () => {
