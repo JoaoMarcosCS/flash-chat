@@ -19,6 +19,8 @@ export class CreateUserUseCase {
 
     const status = [UserStatus.ACTIVE, UserStatus.DEACTIVATED];
 
+    // não pode existir outro usuário com o mesmo email ou nickname, mesmo que esteja desativado
+    // ainda não temos uma regra de negócio para reativar usuários desativados
     const [emailAlreadyExists, nicknameAlreadyExists] = await Promise.all([
       this.userRepository.findBy({ columns: { email: data.email }, statusValues: status }),
       this.userRepository.findBy({ columns: { nickname: data.nickname }, statusValues: status }),
