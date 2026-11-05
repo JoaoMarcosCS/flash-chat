@@ -1,4 +1,5 @@
 import { createServer, IncomingMessage, Server } from 'http';
+import 'reflect-metadata';
 import { Duplex } from 'stream';
 import { WebSocket, WebSocketServer } from 'ws';
 import { AccessTokenPayload, verifyAccessToken } from '@/modules/auth/token/token';

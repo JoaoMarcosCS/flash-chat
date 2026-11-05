@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { container } from 'tsyringe';
 import { env } from '@/shared/environment/env';
 import { app } from './index';
