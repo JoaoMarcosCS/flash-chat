@@ -25,18 +25,6 @@ const UNIQUE_VIOLATION = '23505';
 
 const DIRECT_KEY_CONSTRAINT = 'UQ_chats_direct_key';
 
-type ChatListRow = {
-  id: string;
-  isGroup: boolean;
-  title: string | null;
-  otherName: string | null;
-  otherStatus: ChatParticipant['status'] | null;
-  lastMessageId: string | null;
-  lastMessageContent: string | null;
-  senderId: string | null;
-  senderName: string | null;
-};
-
 export class ChatRepository implements IChatRepository {
   private repository: Repository<ChatEntity>;
 
@@ -128,23 +116,25 @@ export class ChatRepository implements IChatRepository {
         'c.id AS "id"',
         'c.is_group AS "isGroup"',
         'c.title AS "title"',
-        'ou.name AS "otherName"',
-        'ou.status AS "otherStatus"',
-        'c.last_message_id AS "lastMessageId"',
-        'c.last_message_content AS "lastMessageContent"',
-        's.id AS "senderId"',
-        's.name AS "senderName"',
+        `CASE WHEN ou.id IS NULL THEN NULL
+      ELSE json_build_object('name', ou.name, 'status', ou.status) END AS "otherParticipant"`,
+        `CASE WHEN c.last_message_id IS NULL THEN NULL
+      ELSE json_build_object(
+        'id', c.last_message_id,
+        'content', c.last_message_content,
+        'sender', json_build_object('id', s.id, 'name', s.name)
+      ) END AS "lastMessage"`,
       ])
       .innerJoin(ChatParticipantEntity, 'me', 'me.chat_id = c.id AND me.user_id = :userId', {
         userId,
-      })
+      }) // somente os chats que o usuário da busca participa
       .leftJoin(
         ChatParticipantEntity,
         'op',
         'op.chat_id = c.id AND op.user_id <> :userId AND c.is_group = false',
-      )
+      ) // busca o outro participante do chat direto (se houver)
       .leftJoin(UserEntity, 'ou', 'ou.id = op.user_id')
-      .leftJoin(MessageEntity, 'm', 'm.id = c.last_message_id')
+      .leftJoin(MessageEntity, 'm', 'm.id = c.last_message_id') // busca o sender da última mensagem (se houver)
       .leftJoin(UserEntity, 's', 's.id = m.sender_id')
       .orderBy('COALESCE(c.last_message_id, c.id)', 'DESC')
       .limit(limit);
@@ -161,9 +151,7 @@ export class ChatRepository implements IChatRepository {
       builder.andWhere('COALESCE(c.last_message_id, c.id) < :cursor', { cursor });
     }
 
-    const rows = await builder.getRawMany<ChatListRow>();
-
-    return rows.map(toChatListItem);
+    return builder.getRawMany<ChatListItem>();
   }
 }
 
@@ -230,27 +218,6 @@ const withParticipants = async (
     participants,
   };
 };
-
-const toChatListItem = (row: ChatListRow): ChatListItem => ({
-  id: row.id,
-  isGroup: row.isGroup,
-  title: row.title,
-  otherParticipant:
-    row.otherName !== null && row.otherStatus !== null
-      ? { name: row.otherName, status: row.otherStatus }
-      : null,
-  lastMessage:
-    row.lastMessageId !== null &&
-    row.lastMessageContent !== null &&
-    row.senderId !== null &&
-    row.senderName !== null
-      ? {
-          id: row.lastMessageId,
-          content: row.lastMessageContent,
-          sender: { id: row.senderId, name: row.senderName },
-        }
-      : null,
-});
 
 const buildDirectKey = (userIds: [string, string]): string =>
   userIds
