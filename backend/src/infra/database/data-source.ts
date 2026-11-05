@@ -17,7 +17,7 @@ export const AppDataSource = new DataSource({
   poolSize: 10,
   extra: {
     idleTimeoutMillis: 30000, // fecha conexão ociosa após 30s
-    statement_timeout: 40000, // o Postgres aborta query que passa de 30s (evita query travada segurando conexão)
+    statement_timeout: 30000, // o Postgres aborta query que passa de 30s (evita query travada segurando conexão)
   },
   connectTimeoutMS: 10000, // se passar de 10s tentando se conectar, retorna erro
 });
