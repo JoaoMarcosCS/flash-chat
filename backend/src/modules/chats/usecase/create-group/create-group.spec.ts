@@ -88,10 +88,7 @@ describe('CreateGroupUseCase', () => {
   it('should create a group with the initiator', async () => {
     const result = await useCase.execute(dto, userId);
 
-    expect(userRepository.findBy).toHaveBeenCalledWith({
-      ids: [userId, brunoId, carlaId],
-      statusValues: [UserStatus.ACTIVE, UserStatus.DEACTIVATED],
-    });
+    expect(userRepository.findBy).toHaveBeenCalledWith({ ids: [userId, brunoId, carlaId] });
     expect(chatRepository.createGroup).toHaveBeenCalledWith({
       initiatorId: userId,
       title: 'Viagem',
@@ -135,12 +132,8 @@ describe('CreateGroupUseCase', () => {
     await expect(promise).rejects.toThrow(MessageError.CANNOT_INCLUDE_YOURSELF);
   });
 
-  it('should throw UnauthorizedException when the initiator is deactivated', async () => {
-    vi.mocked(userRepository.findBy).mockResolvedValueOnce([
-      makeUser(userId, UserStatus.DEACTIVATED),
-      makeUser(brunoId),
-      makeUser(carlaId),
-    ]);
+  it('should throw UnauthorizedException when the initiator is not active', async () => {
+    vi.mocked(userRepository.findBy).mockResolvedValueOnce([makeUser(brunoId), makeUser(carlaId)]);
 
     const promise = useCase.execute(dto, userId);
 
@@ -149,14 +142,8 @@ describe('CreateGroupUseCase', () => {
     expect(chatRepository.createGroup).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['missing', [makeUser(userId), makeUser(brunoId)]],
-    [
-      'deactivated',
-      [makeUser(userId), makeUser(brunoId), makeUser(carlaId, UserStatus.DEACTIVATED)],
-    ],
-  ])('should throw NotFoundException when a participant is %s', async (_, users) => {
-    vi.mocked(userRepository.findBy).mockResolvedValueOnce(users);
+  it('should throw NotFoundException when a participant is not active', async () => {
+    vi.mocked(userRepository.findBy).mockResolvedValueOnce([makeUser(userId), makeUser(brunoId)]);
 
     const promise = useCase.execute(dto, userId);
 

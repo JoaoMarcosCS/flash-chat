@@ -5,7 +5,6 @@ import { CreateGroupDTO } from './create-group.schema';
 import { IUserRepository } from '@/modules/users/repository/user-repository.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
 import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
-import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { MessageError } from '@/shared/enums/erros.enum';
 import {
   BadRequestException,
@@ -30,14 +29,10 @@ export class CreateGroupUseCase {
       throw new BadRequestException(MessageError.CANNOT_INCLUDE_YOURSELF);
     }
 
-    const users = await this.userRepository.findBy({
-      ids: [userId, ...participantIds],
-      statusValues: [UserStatus.ACTIVE, UserStatus.DEACTIVATED],
-    });
+    // não se pode criar um grupo com usuários desativados
+    const users = await this.userRepository.findBy({ ids: [userId, ...participantIds] });
 
-    const activeIds = new Set(
-      users.filter(({ status }) => status === UserStatus.ACTIVE).map(({ id }) => id),
-    );
+    const activeIds = new Set(users.map(({ id }) => id));
 
     if (!activeIds.has(userId)) {
       throw new UnauthorizedException(MessageError.INVALID_TOKEN);
