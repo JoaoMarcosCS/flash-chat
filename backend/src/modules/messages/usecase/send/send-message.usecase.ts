@@ -40,12 +40,14 @@ export class SendMessageUseCase {
       throw new NotFoundException(MessageError.CHAT_NOT_FOUND);
     }
 
+    // usuário desativado não pode enviar mensagem
     const sender = chat.participants.find(({ id }) => id === userId);
 
     if (sender?.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException(MessageError.INVALID_TOKEN);
     }
 
+    // chat desativado (direct chat com um usuário desativo) não pode enviar mensagem
     if (
       !chat.isGroup &&
       chat.participants.some(({ status }) => status === UserStatus.DEACTIVATED)

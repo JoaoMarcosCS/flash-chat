@@ -60,6 +60,7 @@ export class PersistMessageConsumer implements IQueueConsumer {
       message: { id: message.id, chatId: message.chatId },
     };
 
+    // publica evento para notificar que a mensagem foi persistida
     await this.queue.publishExchange(Exchange.EVENTS, RoutingKey.MESSAGE_PERSISTED, event);
 
     this.logger.info('Message persisted', { id: message.id, chatId: message.chatId, attempt });
