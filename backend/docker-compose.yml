@@ -104,7 +104,7 @@ services:
   persist-consumer:
     <<: *backend
     container_name: flash-chat-persist-consumer
-    command: ["node", "dist/infra/consumer/server.js"]
+    command: ["node", "dist/infra/persist-consumer/server.js"]
 
 volumes:
   pgdata:
