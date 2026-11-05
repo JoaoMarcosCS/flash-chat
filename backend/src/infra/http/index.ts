@@ -9,7 +9,6 @@ import { errorHandler } from './middleware/error-handler';
 import swaggerUi from 'swagger-ui-express';
 import { openApiDocument } from '@/shared/docs/openapi';
 import { corsConfig } from './security/cors.config';
-import { limiter } from './security/rate-limit.config';
 import { httpLogger, requestContextMiddleware } from './middleware/request-logger';
 import { environmentCheck } from '@/shared/utils/environment-check';
 
@@ -26,7 +25,6 @@ app.get('/health', (req, res) => {
 app.use(httpLogger);
 
 app.use(cors(corsConfig));
-app.use(limiter);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
