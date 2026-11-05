@@ -222,7 +222,7 @@ export class ChatRepository implements IChatRepository {
 }
 
 // Função para gerar a chave única de um chat direto entre dois usuários
-const buildDirectKey = (userIds: [string, string]): string =>
+export const buildDirectKey = (userIds: [string, string]): string =>
   userIds
     .map((id) => id.toLowerCase())
     .sort()
