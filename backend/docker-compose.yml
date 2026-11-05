@@ -99,7 +99,7 @@ services:
     command: ["node", "dist/infra/ws/server.js"]
 
     ports:
-      - "${WS_PORT:-3001}:${WS_PORT:-3001}"
+      - "${WS_PORT}:${WS_PORT}"
 
   persist-consumer:
     <<: *backend
