@@ -62,6 +62,7 @@ export const usersPaths: ZodOpenApiPathsObject = {
         },
         '400': errorResponse('Dados inválidos'),
         '409': errorResponse('E-mail ou nickname já cadastrado'),
+        '429': errorResponse('Mais de 10 tentativas em 15 minutos'),
         '500': errorResponse('Erro interno'),
       },
     },
