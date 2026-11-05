@@ -34,8 +34,8 @@ export const messagesPaths: ZodOpenApiPathsObject = {
       summary: 'Lista as Messages de um Chat, da mais recente para a mais antiga',
       security: [{ bearerAuth: [] }],
       requestParams: {
-        path: ListMessagesSchema.pick({ id: true }),
-        query: ListMessagesSchema.omit({ id: true }),
+        path: z.object({ id: ListMessagesSchema.shape.chatId }),
+        query: ListMessagesSchema.omit({ chatId: true }),
       },
       responses: {
         '200': {

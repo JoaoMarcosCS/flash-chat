@@ -60,7 +60,7 @@ describe('ListMessagesUseCase', () => {
   });
 
   it('should use the default limit without cursor', async () => {
-    await useCase.execute(ListMessagesSchema.parse({ id: chatId }), userId);
+    await useCase.execute(ListMessagesSchema.parse({ chatId }), userId);
 
     expect(chatRepository.findById).toHaveBeenCalledWith(chatId, userId);
     expect(messageRepository.findByChat).toHaveBeenCalledWith({
@@ -73,7 +73,7 @@ describe('ListMessagesUseCase', () => {
   it('should list a read-only chat', async () => {
     vi.mocked(messageRepository.findByChat).mockResolvedValueOnce([makeMessage('b')]);
 
-    const result = await useCase.execute({ id: chatId, cursor, limit: 20 }, userId);
+    const result = await useCase.execute({ chatId, cursor, limit: 20 }, userId);
 
     expect(result).toEqual({ data: [makeMessage('b')], nextCursor: null });
   });
@@ -85,7 +85,7 @@ describe('ListMessagesUseCase', () => {
       makeMessage('a'),
     ]);
 
-    const result = await useCase.execute({ id: chatId, limit: 2 }, userId);
+    const result = await useCase.execute({ chatId, limit: 2 }, userId);
 
     expect(result.data.map(({ id }) => id)).toEqual(['c', 'b']);
     expect(result.nextCursor).toBe('b');
@@ -94,7 +94,7 @@ describe('ListMessagesUseCase', () => {
   it('should throw not found when the user is not a participant', async () => {
     vi.mocked(chatRepository.findById).mockResolvedValueOnce(null);
 
-    const promise = useCase.execute({ id: chatId, limit: 20 }, userId);
+    const promise = useCase.execute({ chatId, limit: 20 }, userId);
 
     await expect(promise).rejects.toBeInstanceOf(NotFoundException);
     await expect(promise).rejects.toThrow(MessageError.CHAT_NOT_FOUND);
@@ -104,20 +104,20 @@ describe('ListMessagesUseCase', () => {
 
 describe('ListMessagesSchema', () => {
   it('should reject a chat id that is not an uuid', () => {
-    expect(ListMessagesSchema.safeParse({ id: 'invalid' }).error?.issues[0].message).toBe(
+    expect(ListMessagesSchema.safeParse({ chatId: 'invalid' }).error?.issues[0].message).toBe(
       'Chat inválido',
     );
   });
 
   it('should reject a cursor that is not an uuid', () => {
-    expect(ListMessagesSchema.safeParse({ id: chatId, cursor: 'invalid' }).success).toBe(false);
+    expect(ListMessagesSchema.safeParse({ chatId, cursor: 'invalid' }).success).toBe(false);
   });
 
   it('should coerce limit from query string', () => {
-    expect(ListMessagesSchema.parse({ id: chatId, limit: '5' }).limit).toBe(5);
+    expect(ListMessagesSchema.parse({ chatId, limit: '5' }).limit).toBe(5);
   });
 
   it('should reject limit greater than 100', () => {
-    expect(ListMessagesSchema.safeParse({ id: chatId, limit: '101' }).success).toBe(false);
+    expect(ListMessagesSchema.safeParse({ chatId, limit: '101' }).success).toBe(false);
   });
 });

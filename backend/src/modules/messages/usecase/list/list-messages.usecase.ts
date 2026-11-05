@@ -18,7 +18,7 @@ export class ListMessagesUseCase {
   ) {}
 
   async execute(
-    { id: chatId, cursor, limit }: ListMessagesDTO,
+    { chatId, cursor, limit }: ListMessagesDTO,
     userId: string,
   ): Promise<ListMessagesResponse> {
     const chat = await this.chatRepository.findById(chatId, userId);

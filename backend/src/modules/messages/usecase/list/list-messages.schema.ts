@@ -3,7 +3,7 @@ import z from 'zod';
 export const LIST_MESSAGES_DEFAULT_LIMIT = 20;
 
 export const ListMessagesSchema = z.object({
-  id: z.uuid('Chat inválido'),
+  chatId: z.uuid('Chat inválido'),
   cursor: z.uuid('Cursor inválido').optional(),
   limit: z.coerce
     .number('Limite deve ser um número')

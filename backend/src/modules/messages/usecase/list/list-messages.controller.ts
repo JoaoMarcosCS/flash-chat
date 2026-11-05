@@ -6,7 +6,7 @@ import { ListMessagesUseCase } from './list-messages.usecase';
 
 export class ListMessagesController {
   async handle(req: Request, res: Response): Promise<Response> {
-    const safeData = validateWithZod(ListMessagesSchema, { ...req.query, id: req.params.id });
+    const safeData = validateWithZod(ListMessagesSchema, { ...req.query, chatId: req.params.id });
 
     const useCase = container.resolve(ListMessagesUseCase);
 
