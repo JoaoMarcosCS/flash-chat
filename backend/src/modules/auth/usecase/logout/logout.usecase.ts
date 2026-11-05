@@ -11,6 +11,7 @@ export class LogoutUseCase {
   async execute({ refreshToken }: LogoutDTO): Promise<void> {
     const payload = refreshToken ? verifyRefreshToken(refreshToken) : null;
 
+    //remove session do caceh
     if (payload) {
       await this.cache.invalidate(sessionKey(payload.sessionId));
     }

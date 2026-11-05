@@ -13,6 +13,7 @@ export class LogoutController {
 
     await useCase.execute(safeData);
 
+    // remove o refresh token do cookie
     clearRefreshTokenCookie(res);
 
     return res.status(204).send();

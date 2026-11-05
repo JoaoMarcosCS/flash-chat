@@ -13,12 +13,14 @@ export class RefreshController {
   async handle(req: Request, res: Response): Promise<Response> {
     const safeData = validateWithZod(RefreshSchema, { refreshToken: readRefreshTokenCookie(req) });
 
+    // remove o refresh token do cookie antes de gerar um novo
     clearRefreshTokenCookie(res);
 
     const useCase = container.resolve(RefreshUseCase);
 
     const tokens = await useCase.execute(safeData);
 
+    // adiciona o novo refresh token no cookie do response
     setRefreshTokenCookie(res, tokens);
 
     return res.status(200).json({ accessToken: tokens.accessToken });

@@ -13,6 +13,7 @@ export class LoginController {
 
     const tokens = await useCase.execute(safeData);
 
+    // adiciona o refresh token como cookie seguro na resposta para o cliente
     setRefreshTokenCookie(res, tokens);
 
     return res.status(200).json({ accessToken: tokens.accessToken });

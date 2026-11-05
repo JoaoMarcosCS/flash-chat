@@ -21,6 +21,9 @@ export class RefreshUseCase {
       throw new UnauthorizedException(MessageError.INVALID_TOKEN);
     }
 
+    // exclui o user id do cache se ele existir
+    // se a chave não existir, significa que o refresh token já foi invalidado e a sessão
+    // não deve ser renovada, deslogando o usuário e forçando-o a logar novamente
     const sessionUserId = await this.cache.getAndDelete<string>(sessionKey(payload.sessionId));
 
     if (sessionUserId !== payload.userId) {
@@ -35,6 +38,7 @@ export class RefreshUseCase {
 
     const tokens = generateTokens(user);
 
+    // salva o user id no cache para validação futura
     await saveSession(this.cache, user.id, tokens);
 
     return tokens;

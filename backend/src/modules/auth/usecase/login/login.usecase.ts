@@ -24,6 +24,7 @@ export class LoginUseCase {
 
     const tokens = generateTokens(user);
 
+    // salva o user id no cache para validação futura
     await saveSession(this.cache, user.id, tokens);
 
     return tokens;
