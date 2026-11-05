@@ -265,7 +265,8 @@ const run = async (): Promise<void> => {
 
   try {
     if (await AppDataSource.getRepository(UserEntity).exists()) {
-      throw new Error('Database already has users, recreate the Postgres volume before seeding');
+      logger.info('Seed skipped: database already has users');
+      return;
     }
 
     faker.seed(FAKER_SEED);
