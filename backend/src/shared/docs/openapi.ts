@@ -1,5 +1,6 @@
 import { createDocument } from 'zod-openapi';
 import { env } from '@/shared/environment/env';
+import { authPaths } from './auth/auth.docs';
 import { usersPaths } from './users/users.docs';
 import { chatsPaths } from './chats/chats.docs';
 import { messagesPaths } from './messages/messages.docs';
@@ -14,9 +15,11 @@ export const openApiDocument = createDocument({
   components: {
     securitySchemes: {
       bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      refreshTokenCookie: { type: 'apiKey', in: 'cookie', name: 'refreshToken' },
     },
   },
   paths: {
+    ...authPaths,
     ...usersPaths,
     ...chatsPaths,
     ...messagesPaths,
