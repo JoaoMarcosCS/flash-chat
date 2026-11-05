@@ -118,6 +118,29 @@ describe('GET /api/v1/chats (integração)', () => {
     expect(ids(byNickname.body)).toEqual([withCarla]);
   });
 
+  it('should filter direct chats and groups by type', async () => {
+    const [direct, groups] = await Promise.all([
+      list(ana, { type: 'direct' }),
+      list(ana, { type: 'group' }),
+    ]);
+
+    expect(ids(direct.body)).toEqual([withBruno, withCarla]);
+    expect(ids(groups.body)).toEqual([group]);
+  });
+
+  it('should combine the type filter with the search', async () => {
+    const response = await list(ana, { type: 'direct', search: 'viag' });
+
+    expect(ids(response.body)).toEqual([]);
+  });
+
+  it('should return 400 when type is unknown', async () => {
+    const response = await list(ana, { type: 'channel' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toBe('Tipo de Chat inválido');
+  });
+
   it('should treat a blank search as no search', async () => {
     const response = await list(ana, { search: '  ' });
 

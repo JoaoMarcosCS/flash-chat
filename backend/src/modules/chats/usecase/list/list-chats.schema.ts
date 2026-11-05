@@ -1,5 +1,6 @@
 import z from 'zod';
 import { countSearchCharacters } from '@/shared/utils/build-ts-query';
+import { ChatType } from '@/shared/enums/chats/chat-type.enum';
 
 export const LIST_CHATS_DEFAULT_LIMIT = 20;
 
@@ -15,6 +16,7 @@ export const ListChatsSchema = z.object({
       `Busca deve ter no mínimo ${LIST_CHATS_SEARCH_MIN_LENGTH} caracteres`,
     )
     .optional(),
+  type: z.enum(ChatType, 'Tipo de Chat inválido').optional(),
   cursor: z.uuid('Cursor inválido').optional(),
   limit: z.coerce
     .number('Limite deve ser um número')

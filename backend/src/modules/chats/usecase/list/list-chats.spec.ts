@@ -3,6 +3,7 @@ import { ChatListItem, IChatRepository } from '../../repository/chat-repository.
 import { ListChatsUseCase } from './list-chats.usecase';
 import { LIST_CHATS_DEFAULT_LIMIT, ListChatsSchema } from './list-chats.schema';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
+import { ChatType } from '@/shared/enums/chats/chat-type.enum';
 
 const userId = '0199b7a0-0000-7000-8000-000000000001';
 const cursor = '0199b7a0-0000-7000-8000-0000000000ff';
@@ -73,6 +74,21 @@ describe('ListChatsUseCase', () => {
     });
   });
 
+  it.each([
+    [ChatType.DIRECT, false],
+    [ChatType.GROUP, true],
+  ])('should filter chats of type %s', async (type, isGroup) => {
+    await useCase.execute({ type, limit: 20 }, userId);
+
+    expect(vi.mocked(chatRepository.findByParticipant).mock.calls[0][0].isGroup).toBe(isGroup);
+  });
+
+  it('should not filter by type when it is absent', async () => {
+    await useCase.execute({ limit: 20 }, userId);
+
+    expect(vi.mocked(chatRepository.findByParticipant).mock.calls[0][0].isGroup).toBeUndefined();
+  });
+
   it('should treat a blank search as no search', async () => {
     await useCase.execute(ListChatsSchema.parse({ search: '   ' }), userId);
 
@@ -140,6 +156,12 @@ describe('ListChatsSchema', () => {
 
   it('should reject limit greater than 100', () => {
     expect(ListChatsSchema.safeParse({ limit: '101' }).success).toBe(false);
+  });
+
+  it('should reject an unknown type', () => {
+    expect(ListChatsSchema.safeParse({ type: 'channel' }).error?.issues[0].message).toBe(
+      'Tipo de Chat inválido',
+    );
   });
 
   it('should reject a cursor that is not an uuid', () => {

@@ -61,7 +61,7 @@ export const chatsPaths: ZodOpenApiPathsObject = {
           description: 'Página de Chats',
           content: { 'application/json': { schema: ListChatsResponseSchema } },
         },
-        '400': errorResponse('Busca com menos de 2 caracteres, limite ou cursor inválido'),
+        '400': errorResponse('Busca com menos de 2 caracteres, tipo, limite ou cursor inválido'),
         '401': errorResponse('Token ausente ou inválido'),
         '500': errorResponse('Erro interno'),
       },

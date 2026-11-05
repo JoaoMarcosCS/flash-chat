@@ -3,6 +3,7 @@ import { IChatRepository } from '../../repository/chat-repository.interface';
 import { ChatListItemResponse, toChatListItemResponse } from '../../mapper/chat.mapper';
 import { ListChatsDTO } from './list-chats.schema';
 import { buildTsQuery } from '@/shared/utils/build-ts-query';
+import { ChatType } from '@/shared/enums/chats/chat-type.enum';
 
 export type ListChatsResponse = {
   data: ChatListItemResponse[];
@@ -14,12 +15,13 @@ export class ListChatsUseCase {
   constructor(@inject('IChatRepository') private chatRepository: IChatRepository) {}
 
   async execute(
-    { search, cursor, limit }: ListChatsDTO,
+    { search, type, cursor, limit }: ListChatsDTO,
     userId: string,
   ): Promise<ListChatsResponse> {
     const chats = await this.chatRepository.findByParticipant({
       userId,
       value: buildTsQuery(search),
+      isGroup: type ? type === ChatType.GROUP : undefined,
       cursor,
       limit: limit + 1,
     });
