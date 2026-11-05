@@ -173,6 +173,7 @@ export class ChatRepository implements IChatRepository {
   async findByParticipant({
     userId,
     value,
+    isGroup,
     cursor,
     limit,
   }: FindChatsByParticipantParams): Promise<ChatListItem[]> {
@@ -211,6 +212,10 @@ export class ChatRepository implements IChatRepository {
           OR (c.is_group = false AND ${USER_SEARCH_VECTOR} @@ to_tsquery('simple', :value)))`,
         { value },
       );
+    }
+
+    if (isGroup !== undefined) {
+      builder.andWhere('c.is_group = :isGroup', { isGroup });
     }
 
     if (cursor) {

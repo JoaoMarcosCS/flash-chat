@@ -33,6 +33,7 @@ export type ChatListItem = Pick<ChatEntity, 'id' | 'isGroup' | 'title'> & {
 export type FindChatsByParticipantParams = {
   userId: string;
   value?: string;
+  isGroup?: boolean;
   cursor?: string;
   limit: number;
 };
