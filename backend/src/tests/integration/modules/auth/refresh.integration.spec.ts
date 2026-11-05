@@ -42,8 +42,11 @@ describe('POST /api/v1/auth/refresh (integração)', () => {
     expect(responses.map(({ status }) => status).sort()).toEqual([200, 401]);
   });
 
-  it('should reject a request without cookie', async () => {
-    await expectRejected(await refresh());
+  it('should return 400 when the cookie is missing', async () => {
+    const response = await refresh();
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toBe('Refresh token é obrigatório');
   });
 
   it('should reject a valid token without session', async () => {
