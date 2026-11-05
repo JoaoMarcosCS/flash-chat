@@ -39,6 +39,7 @@ const mockChatRepository = (): IChatRepository => ({
   createGroup: vi.fn(),
   findById: vi.fn(),
   findByParticipant: vi.fn().mockResolvedValue([]),
+  enrichWithParticipants: vi.fn(),
 });
 
 describe('ListChatsUseCase', () => {

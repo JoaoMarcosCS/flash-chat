@@ -1,4 +1,4 @@
-import { EntityManager, QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
 import {
   ChatDetails,
@@ -21,10 +21,6 @@ const TITLE_SEARCH_VECTOR = `to_tsvector('simple', coalesce(c.title, ''))`;
 
 const USER_SEARCH_VECTOR = `to_tsvector('simple', coalesce(ou.name, '') || ' ' || coalesce(ou.nickname, ''))`;
 
-const UNIQUE_VIOLATION = '23505';
-
-const DIRECT_KEY_CONSTRAINT = 'UQ_chats_direct_key';
-
 export class ChatRepository implements IChatRepository {
   private repository: Repository<ChatEntity>;
 
@@ -32,63 +28,133 @@ export class ChatRepository implements IChatRepository {
     this.repository = AppDataSource.getRepository(ChatEntity);
   }
 
+  async enrichWithParticipants(chat: ChatEntity): Promise<ChatDetails> {
+    const participants = await AppDataSource.manager
+      .createQueryBuilder(ChatParticipantEntity, 'cp')
+      .innerJoin(UserEntity, 'u', 'u.id = cp.user_id')
+      .select([
+        'u.id AS "id"',
+        'u.name AS "name"',
+        'u.nickname AS "nickname"',
+        'u.status AS "status"',
+      ])
+      .where('cp.chat_id = :chatId', { chatId: chat.id })
+      .orderBy('u.name', 'ASC')
+      .addOrderBy('u.id', 'ASC')
+      .getRawMany<ChatParticipant>();
+
+    return {
+      id: chat.id,
+      isGroup: chat.isGroup,
+      title: chat.title,
+      createdBy: chat.createdBy,
+      createdAt: chat.createdAt,
+      participants,
+    };
+  }
+
   async createDirectChat({
     initiatorId,
     participantId,
-  }: CreateDirectChatData): Promise<{ chat: ChatDetails; created: boolean }> {
-    const existing = await this.findDirectChat([initiatorId, participantId]);
+  }: CreateDirectChatData): Promise<ChatDetails> {
+    const chat = await AppDataSource.transaction(async (manager) => {
+      const participantIds = [initiatorId, participantId];
 
-    if (existing) {
-      return { chat: existing, created: false };
-    }
+      const chatToInsert = {
+        isGroup: false,
+        id: uuidv7(),
+        title: null,
+        directKey: buildDirectKey([initiatorId, participantId]),
+        createdBy: initiatorId,
+        participantIds,
+      };
 
-    try {
-      const chat = await AppDataSource.transaction((manager) =>
-        insertChat(manager, {
-          isGroup: false,
-          title: null,
-          directKey: buildDirectKey([initiatorId, participantId]),
-          createdBy: initiatorId,
-          participantIds: [initiatorId, participantId],
-        }),
-      );
+      const { raw } = await manager
+        .createQueryBuilder()
+        .insert()
+        .into(ChatEntity)
+        .values(chatToInsert)
+        .updateEntity(false)
+        .returning(['id', 'isGroup', 'title', 'createdBy', 'createdAt'])
+        .execute();
 
-      return { chat, created: true };
-    } catch (error) {
-      if (!isDirectKeyViolation(error)) {
-        throw error;
-      }
+      const [row] = raw;
 
-      const chat = await this.findDirectChat([initiatorId, participantId]);
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(ChatParticipantEntity)
+        .values(participantIds.map((userId) => ({ chatId: row.id, userId })))
+        .updateEntity(false)
+        .execute();
 
-      if (!chat) {
-        throw error;
-      }
+      return {
+        id: row.id,
+        isGroup: row.is_group,
+        title: row.title,
+        createdBy: row.created_by,
+        createdAt: row.created_at,
+      } as ChatEntity;
+    });
 
-      return { chat, created: false };
-    }
+    const chatWithParticipants = await this.enrichWithParticipants(chat);
+
+    return chatWithParticipants;
   }
 
-  async findDirectChat(userIds: [string, string]): Promise<ChatDetails | null> {
+  async findDirectChat(userIds: [string, string]): Promise<ChatEntity | null> {
     const chat = await this.repository
       .createQueryBuilder('c')
       .select(CHAT_COLUMNS)
-      .where('c.directKey = :directKey', { directKey: buildDirectKey(userIds) })
+      .where('c.directKey = :directKey', { directKey: buildDirectKey(userIds) }) // busca chat direto pela chave única
       .getOne();
 
-    return chat ? withParticipants(AppDataSource.manager, chat) : null;
+    return chat || null;
   }
 
   async createGroup({ initiatorId, title, participantIds }: CreateGroupData): Promise<ChatDetails> {
-    return await AppDataSource.transaction((manager) =>
-      insertChat(manager, {
+    const chat = await AppDataSource.transaction(async (manager) => {
+      const participantIdsToInsert = [initiatorId, ...participantIds];
+
+      const chatToInsert = {
         isGroup: true,
+        id: uuidv7(),
         title,
-        directKey: null,
         createdBy: initiatorId,
-        participantIds: [initiatorId, ...participantIds],
-      }),
-    );
+        participantIdsToInsert,
+      };
+
+      const { raw } = await manager
+        .createQueryBuilder()
+        .insert()
+        .into(ChatEntity)
+        .values(chatToInsert)
+        .updateEntity(false)
+        .returning(['id', 'isGroup', 'title', 'createdBy', 'createdAt'])
+        .execute();
+
+      const [row] = raw;
+
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(ChatParticipantEntity)
+        .values(participantIdsToInsert.map((userId) => ({ chatId: row.id, userId })))
+        .updateEntity(false)
+        .execute();
+
+      return {
+        id: row.id,
+        isGroup: row.is_group,
+        title: row.title,
+        createdBy: row.created_by,
+        createdAt: row.created_at,
+      } as ChatEntity;
+    });
+
+    const chatWithParticipants = await this.enrichWithParticipants(chat);
+
+    return chatWithParticipants;
   }
 
   async findById(chatId: string, userId: string): Promise<ChatDetails | null> {
@@ -101,7 +167,7 @@ export class ChatRepository implements IChatRepository {
       .where('c.id = :chatId', { chatId })
       .getOne();
 
-    return chat ? withParticipants(AppDataSource.manager, chat) : null;
+    return chat ? this.enrichWithParticipants(chat) : null;
   }
 
   async findByParticipant({
@@ -155,82 +221,9 @@ export class ChatRepository implements IChatRepository {
   }
 }
 
-type InsertChatData = Pick<ChatEntity, 'isGroup' | 'title' | 'directKey' | 'createdBy'> & {
-  participantIds: string[];
-};
-
-const insertChat = async (
-  manager: EntityManager,
-  { participantIds, ...data }: InsertChatData,
-): Promise<ChatDetails> => {
-  const { raw } = await manager
-    .createQueryBuilder()
-    .insert()
-    .into(ChatEntity)
-    .values({ id: uuidv7(), ...data })
-    .updateEntity(false)
-    .returning(['id', 'isGroup', 'title', 'createdBy', 'createdAt'])
-    .execute();
-
-  const [row] = raw;
-
-  await manager
-    .createQueryBuilder()
-    .insert()
-    .into(ChatParticipantEntity)
-    .values(participantIds.map((userId) => ({ chatId: row.id, userId })))
-    .updateEntity(false)
-    .execute();
-
-  return withParticipants(manager, {
-    id: row.id,
-    isGroup: row.is_group,
-    title: row.title,
-    createdBy: row.created_by,
-    createdAt: row.created_at,
-  });
-};
-
-const withParticipants = async (
-  manager: EntityManager,
-  chat: Omit<ChatDetails, 'participants'>,
-): Promise<ChatDetails> => {
-  const participants = await manager
-    .createQueryBuilder(ChatParticipantEntity, 'cp')
-    .innerJoin(UserEntity, 'u', 'u.id = cp.user_id')
-    .select([
-      'u.id AS "id"',
-      'u.name AS "name"',
-      'u.nickname AS "nickname"',
-      'u.status AS "status"',
-    ])
-    .where('cp.chat_id = :chatId', { chatId: chat.id })
-    .orderBy('u.name', 'ASC')
-    .addOrderBy('u.id', 'ASC')
-    .getRawMany<ChatParticipant>();
-
-  return {
-    id: chat.id,
-    isGroup: chat.isGroup,
-    title: chat.title,
-    createdBy: chat.createdBy,
-    createdAt: chat.createdAt,
-    participants,
-  };
-};
-
+// Função para gerar a chave única de um chat direto entre dois usuários
 const buildDirectKey = (userIds: [string, string]): string =>
   userIds
     .map((id) => id.toLowerCase())
     .sort()
     .join(':');
-
-const isDirectKeyViolation = (error: unknown): boolean => {
-  if (!(error instanceof QueryFailedError)) {
-    return false;
-  }
-
-  const { code, constraint } = error.driverError as { code?: string; constraint?: string };
-
-  return code === UNIQUE_VIOLATION && constraint === DIRECT_KEY_CONSTRAINT;
-};

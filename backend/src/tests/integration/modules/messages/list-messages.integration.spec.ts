@@ -21,7 +21,7 @@ describe('GET /api/v1/chats/:id/messages (integração)', () => {
     ana = await createUser('Ana Souza', 'ana');
     bruno = await createUser('Bruno Lima', 'bruno');
     carla = await createUser('Carla Dias', 'carla');
-    const { chat } = await new ChatRepository().createDirectChat({
+    const chat = await new ChatRepository().createDirectChat({
       initiatorId: ana.id,
       participantId: bruno.id,
     });

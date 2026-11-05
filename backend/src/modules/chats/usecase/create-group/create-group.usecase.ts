@@ -2,7 +2,6 @@ import { inject, injectable } from 'tsyringe';
 import { IChatRepository } from '../../repository/chat-repository.interface';
 import { ChatResponse, toChatResponse } from '../../mapper/chat.mapper';
 import { CreateGroupDTO } from './create-group.schema';
-import { publishChatCreated } from '../../event/chat-created.event';
 import { IUserRepository } from '@/modules/users/repository/user-repository.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
 import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
@@ -13,6 +12,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@/shared/errors/errors';
+import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 
 @injectable()
 export class CreateGroupUseCase {
@@ -55,7 +55,15 @@ export class CreateGroupUseCase {
 
     const response = toChatResponse(chat);
 
-    await publishChatCreated(this.queue, response, this.logger);
+    // publica o evento para notificar os participantes do novo grupo e atualizar suas listas de chats
+    try {
+      await this.queue.publishExchange(Exchange.EVENTS, RoutingKey.CHAT_CREATED, {
+        participantIds: response.participants.map(({ id }) => id),
+        chat: response,
+      });
+    } catch (error) {
+      this.logger.error('Failed to publish chat.created', { chatId: response.id, error });
+    }
 
     return response;
   }

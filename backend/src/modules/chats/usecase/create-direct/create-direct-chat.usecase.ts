@@ -2,7 +2,6 @@ import { inject, injectable } from 'tsyringe';
 import { IChatRepository } from '../../repository/chat-repository.interface';
 import { ChatResponse, toChatResponse } from '../../mapper/chat.mapper';
 import { CreateDirectChatDTO } from './create-direct-chat.schema';
-import { publishChatCreated } from '../../event/chat-created.event';
 import { IUserRepository } from '@/modules/users/repository/user-repository.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
 import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
@@ -13,6 +12,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@/shared/errors/errors';
+import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
+import { ChatCreatedEvent } from '../../event/chat-created.event';
 
 export type CreateDirectChatResponse = {
   chat: ChatResponse;
@@ -34,6 +35,7 @@ export class CreateDirectChatUseCase {
   ): Promise<CreateDirectChatResponse> {
     this.logger.info('Executing CreateDirectChatUseCase', { data: { userId, participantId } });
 
+    // regra de negócio: não é permitido criar chat consigo mesmo
     if (participantId === userId) {
       throw new BadRequestException(MessageError.CANNOT_INCLUDE_YOURSELF);
     }
@@ -54,27 +56,40 @@ export class CreateDirectChatUseCase {
       throw new NotFoundException(MessageError.USER_NOT_FOUND);
     }
 
-    if (participant.status === UserStatus.DEACTIVATED) {
-      const existing = await this.chatRepository.findDirectChat([userId, participantId]);
+    const existing = await this.chatRepository.findDirectChat([userId, participantId]);
 
-      if (!existing) {
-        throw new NotFoundException(MessageError.USER_NOT_FOUND);
-      }
+    if (existing) {
+      const chatWithParticipants = await this.chatRepository.enrichWithParticipants(existing);
 
-      return { chat: toChatResponse(existing), created: false };
+      return { chat: toChatResponse(chatWithParticipants), created: false };
     }
 
-    const { chat, created } = await this.chatRepository.createDirectChat({
+    // não pode criar um chat com um usuário desativado
+    // mas se já existir um chat direto com esse usuário, retorna o chat existente
+    // o chat com um usuário desativado deve ser apenas read-only, não é permitido enviar mensagens para ele
+    if (participant.status === UserStatus.DEACTIVATED) {
+      throw new NotFoundException(MessageError.USER_NOT_FOUND);
+    }
+
+    const chatCreated = await this.chatRepository.createDirectChat({
       initiatorId: userId,
       participantId,
     });
 
-    const response = toChatResponse(chat);
+    const response = toChatResponse(chatCreated);
 
-    if (created) {
-      await publishChatCreated(this.queue, response, this.logger);
+    const event: ChatCreatedEvent = {
+      participantIds: response.participants.map(({ id }) => id),
+      chat: response,
+    };
+
+    //publica o evento de iniciação de conversa para o server ws emitir para o front-end dos participantes
+    try {
+      await this.queue.publishExchange(Exchange.EVENTS, RoutingKey.CHAT_CREATED, event);
+    } catch (error) {
+      this.logger.error('Failed to publish chat.created', { chatId: response.id, error });
     }
 
-    return { chat: response, created };
+    return { chat: response, created: true };
   }
 }

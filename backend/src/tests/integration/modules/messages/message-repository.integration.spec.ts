@@ -24,7 +24,7 @@ describe('MessageRepository (integração)', () => {
     repository = new MessageRepository();
     ana = await createUser('Ana Souza', 'ana');
     bruno = await createUser('Bruno Lima', 'bruno');
-    const { chat } = await new ChatRepository().createDirectChat({
+    const chat = await new ChatRepository().createDirectChat({
       initiatorId: ana.id,
       participantId: bruno.id,
     });
@@ -111,7 +111,7 @@ describe('MessageRepository (integração)', () => {
 
     it('should not return messages from other chats', async () => {
       const carla = await createUser('Carla Dias', 'carla');
-      const { chat } = await new ChatRepository().createDirectChat({
+      const chat = await new ChatRepository().createDirectChat({
         initiatorId: ana.id,
         participantId: carla.id,
       });

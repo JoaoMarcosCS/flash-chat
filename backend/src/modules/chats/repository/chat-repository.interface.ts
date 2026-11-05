@@ -38,9 +38,10 @@ export type FindChatsByParticipantParams = {
 };
 
 export interface IChatRepository {
-  createDirectChat(data: CreateDirectChatData): Promise<{ chat: ChatDetails; created: boolean }>;
-  findDirectChat(userIds: [string, string]): Promise<ChatDetails | null>;
+  createDirectChat(data: CreateDirectChatData): Promise<ChatDetails>;
+  findDirectChat(userIds: [string, string]): Promise<ChatEntity | null>;
   createGroup(data: CreateGroupData): Promise<ChatDetails>;
   findById(chatId: string, userId: string): Promise<ChatDetails | null>;
   findByParticipant(params: FindChatsByParticipantParams): Promise<ChatListItem[]>;
+  enrichWithParticipants(chat: ChatEntity): Promise<ChatDetails>;
 }

@@ -25,7 +25,7 @@ describe('GET /api/v1/chats (integração)', () => {
     carla = await createUser('Carla Dias', 'carla');
     withBruno = (
       await repository.createDirectChat({ initiatorId: ana.id, participantId: bruno.id })
-    ).chat.id;
+    ).id;
     group = (
       await repository.createGroup({
         initiatorId: bruno.id,
@@ -35,7 +35,7 @@ describe('GET /api/v1/chats (integração)', () => {
     ).id;
     withCarla = (
       await repository.createDirectChat({ initiatorId: carla.id, participantId: ana.id })
-    ).chat.id;
+    ).id;
     messageId = await sendMessage(withBruno, bruno, 'Bora amanhã');
   });
 

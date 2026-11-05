@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { QueryFailedError } from 'typeorm';
 import { v7 as uuidv7 } from 'uuid';
 import { AppDataSource } from '@/infra/database/data-source';
 import { ChatRepository } from '@/modules/chats/repository/chat.repository';
@@ -40,51 +41,43 @@ describe('ChatRepository (integração)', () => {
     const ana = await createUser('Ana Souza', 'ana');
     const bruno = await createUser('Bruno Lima', 'bruno');
 
-    const { chat, created } = await repository.createDirectChat({
+    const chat = await repository.createDirectChat({
       initiatorId: bruno.id,
       participantId: ana.id,
     });
 
     const stored = await AppDataSource.getRepository(ChatEntity).findOneByOrFail({ id: chat.id });
 
-    expect(created).toBe(true);
     expect(chat).toMatchObject({ isGroup: false, title: null, createdBy: bruno.id });
     expect(chat.createdAt).toBeInstanceOf(Date);
     expect(chat.participants.map((participant) => participant.id)).toEqual([ana.id, bruno.id]);
     expect(stored.directKey).toBe([ana.id, bruno.id].sort().join(':'));
   });
 
-  it('should return the existing direct chat for the same pair in any order', async () => {
+  it('should reject a second direct chat for the same pair in any order', async () => {
     const repository = new ChatRepository();
     const ana = await createUser('Ana Souza', 'ana');
     const bruno = await createUser('Bruno Lima', 'bruno');
 
-    const first = await repository.createDirectChat({
-      initiatorId: ana.id,
-      participantId: bruno.id,
-    });
-    const second = await repository.createDirectChat({
-      initiatorId: bruno.id,
-      participantId: ana.id,
-    });
+    await repository.createDirectChat({ initiatorId: ana.id, participantId: bruno.id });
 
-    expect(second.created).toBe(false);
-    expect(second.chat.id).toBe(first.chat.id);
+    await expect(
+      repository.createDirectChat({ initiatorId: bruno.id, participantId: ana.id }),
+    ).rejects.toBeInstanceOf(QueryFailedError);
     expect(await AppDataSource.getRepository(ChatEntity).count()).toBe(1);
   });
 
-  it('should return a single direct chat on concurrent creation', async () => {
+  it('should keep a single direct chat on concurrent creation', async () => {
     const repository = new ChatRepository();
     const ana = await createUser('Ana Souza', 'ana');
     const bruno = await createUser('Bruno Lima', 'bruno');
 
-    const results = await Promise.all([
+    const results = await Promise.allSettled([
       repository.createDirectChat({ initiatorId: ana.id, participantId: bruno.id }),
       repository.createDirectChat({ initiatorId: bruno.id, participantId: ana.id }),
     ]);
 
-    expect(new Set(results.map(({ chat }) => chat.id)).size).toBe(1);
-    expect(results.filter(({ created }) => created)).toHaveLength(1);
+    expect(results.map(({ status }) => status).sort()).toEqual(['fulfilled', 'rejected']);
     expect(await AppDataSource.getRepository(ChatEntity).count()).toBe(1);
   });
 
@@ -95,7 +88,7 @@ describe('ChatRepository (integração)', () => {
 
     expect(await repository.findDirectChat([ana.id, bruno.id])).toBeNull();
 
-    const { chat } = await repository.createDirectChat({
+    const chat = await repository.createDirectChat({
       initiatorId: ana.id,
       participantId: bruno.id,
     });
@@ -146,7 +139,7 @@ describe('ChatRepository (integração)', () => {
     const ana = await createUser('Ana Souza', 'ana');
     const bruno = await createUser('Bruno Lima', 'bruno');
     const carla = await createUser('Carla Dias', 'carla');
-    const { chat } = await repository.createDirectChat({
+    const chat = await repository.createDirectChat({
       initiatorId: ana.id,
       participantId: bruno.id,
     });
@@ -160,7 +153,7 @@ describe('ChatRepository (integração)', () => {
     const repository = new ChatRepository();
     const ana = await createUser('Ana Souza', 'ana');
     const bruno = await createUser('Bruno Lima', 'bruno');
-    const { chat } = await repository.createDirectChat({
+    const chat = await repository.createDirectChat({
       initiatorId: ana.id,
       participantId: bruno.id,
     });
@@ -180,7 +173,7 @@ describe('ChatRepository (integração)', () => {
     const ana = await createUser('Ana Souza', 'ana');
     const bruno = await createUser('Bruno Lima', 'bruno');
     const carla = await createUser('Carla Dias', 'carla');
-    const { chat: withBruno } = await repository.createDirectChat({
+    const withBruno = await repository.createDirectChat({
       initiatorId: ana.id,
       participantId: bruno.id,
     });
@@ -230,11 +223,11 @@ describe('ChatRepository (integração)', () => {
     const ana = await createUser('Ana Souza', 'ana');
     const bruno = await createUser('Bruno Lima', 'bruno');
     const carla = await createUser('Carla Dias', 'carla');
-    const { chat: withBruno } = await repository.createDirectChat({
+    const withBruno = await repository.createDirectChat({
       initiatorId: ana.id,
       participantId: bruno.id,
     });
-    const { chat: withCarla } = await repository.createDirectChat({
+    const withCarla = await repository.createDirectChat({
       initiatorId: ana.id,
       participantId: carla.id,
     });
@@ -255,7 +248,7 @@ describe('ChatRepository (integração)', () => {
     const ana = await createUser('Ana Souza', 'ana');
     const bruno = await createUser('Bruno Lima', 'bruno');
     const carla = await createUser('Carla Dias', 'carla');
-    const { chat: withBruno } = await repository.createDirectChat({
+    const withBruno = await repository.createDirectChat({
       initiatorId: ana.id,
       participantId: bruno.id,
     });

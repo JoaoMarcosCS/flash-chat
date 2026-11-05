@@ -53,7 +53,7 @@ describe('PersistMessageConsumer (integração)', () => {
     provider = new RabbitMQQueueProvider(logger);
     ana = await createUser('Ana Souza', 'ana');
     bruno = await createUser('Bruno Lima', 'bruno');
-    const { chat } = await new ChatRepository().createDirectChat({
+    const chat = await new ChatRepository().createDirectChat({
       initiatorId: ana.id,
       participantId: bruno.id,
     });

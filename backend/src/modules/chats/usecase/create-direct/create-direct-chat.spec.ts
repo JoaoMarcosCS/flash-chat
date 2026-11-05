@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatDetails, IChatRepository } from '../../repository/chat-repository.interface';
 import { CreateDirectChatUseCase } from './create-direct-chat.usecase';
 import { CreateDirectChatSchema } from './create-direct-chat.schema';
+import { ChatEntity } from '../../entity/chat.entity';
 import { IUserRepository, PublicUser } from '@/modules/users/repository/user-repository.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
 import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
@@ -33,12 +34,22 @@ const makeChat = (participantStatus = UserStatus.ACTIVE): ChatDetails => ({
   participants: [makeUser(userId), makeUser(participantId, participantStatus)],
 });
 
+const makeChatEntity = (): ChatEntity =>
+  ({
+    id: '0199b7a0-0000-7000-8000-0000000000aa',
+    isGroup: false,
+    title: null,
+    createdBy: userId,
+    createdAt: new Date('2026-10-27T12:00:00Z'),
+  }) as ChatEntity;
+
 const mockChatRepository = (): IChatRepository => ({
-  createDirectChat: vi.fn().mockResolvedValue({ chat: makeChat(), created: true }),
+  createDirectChat: vi.fn().mockResolvedValue(makeChat()),
   findDirectChat: vi.fn().mockResolvedValue(null),
   createGroup: vi.fn(),
   findById: vi.fn(),
   findByParticipant: vi.fn(),
+  enrichWithParticipants: vi.fn(),
 });
 
 const mockUserRepository = (): IUserRepository => ({
@@ -125,13 +136,15 @@ describe('CreateDirectChatUseCase', () => {
   });
 
   it('should return created false when the direct chat already exists', async () => {
-    vi.mocked(chatRepository.createDirectChat).mockResolvedValueOnce({
-      chat: makeChat(),
-      created: false,
-    });
+    const existing = makeChatEntity();
+    vi.mocked(chatRepository.findDirectChat).mockResolvedValueOnce(existing);
+    vi.mocked(chatRepository.enrichWithParticipants).mockResolvedValueOnce(makeChat());
 
     const result = await useCase.execute({ participantId }, userId);
 
+    expect(chatRepository.findDirectChat).toHaveBeenCalledWith([userId, participantId]);
+    expect(chatRepository.enrichWithParticipants).toHaveBeenCalledWith(existing);
+    expect(chatRepository.createDirectChat).not.toHaveBeenCalled();
     expect(result.created).toBe(false);
     expect(queue.publishExchange).not.toHaveBeenCalled();
   });
@@ -171,7 +184,8 @@ describe('CreateDirectChatUseCase', () => {
       makeUser(userId),
       makeUser(participantId, UserStatus.DEACTIVATED),
     ]);
-    vi.mocked(chatRepository.findDirectChat).mockResolvedValueOnce(
+    vi.mocked(chatRepository.findDirectChat).mockResolvedValueOnce(makeChatEntity());
+    vi.mocked(chatRepository.enrichWithParticipants).mockResolvedValueOnce(
       makeChat(UserStatus.DEACTIVATED),
     );
 

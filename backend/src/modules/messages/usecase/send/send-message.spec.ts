@@ -47,6 +47,7 @@ const mockChatRepository = (): IChatRepository => ({
   createGroup: vi.fn(),
   findById: vi.fn().mockResolvedValue(makeChat()),
   findByParticipant: vi.fn(),
+  enrichWithParticipants: vi.fn(),
 });
 
 const mockQueueProvider = (): IQueueProvider => ({
