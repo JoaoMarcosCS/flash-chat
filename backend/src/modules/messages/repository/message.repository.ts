@@ -12,14 +12,6 @@ import { UserEntity } from '@/modules/users/entity/user.entity';
 
 const LAST_MESSAGE_CONTENT_MAX_LENGTH = 100;
 
-type ChatMessageRow = {
-  id: string;
-  content: string;
-  createdAt: Date;
-  senderId: string;
-  senderName: string;
-};
-
 export class MessageRepository implements IMessageRepository {
   private repository: Repository<MessageEntity>;
 
@@ -60,8 +52,7 @@ export class MessageRepository implements IMessageRepository {
         'm.id AS "id"',
         'm.content AS "content"',
         'm.created_at AS "createdAt"',
-        'u.id AS "senderId"',
-        'u.name AS "senderName"',
+        `json_build_object('id', u.id, 'name', u.name) AS "sender"`,
       ])
       .where('m.chat_id = :chatId', { chatId })
       .orderBy('m.id', 'DESC')
@@ -71,14 +62,7 @@ export class MessageRepository implements IMessageRepository {
       builder.andWhere('m.id < :cursor', { cursor });
     }
 
-    const rows = await builder.getRawMany<ChatMessageRow>();
-
-    return rows.map((row) => ({
-      id: row.id,
-      content: row.content,
-      createdAt: row.createdAt,
-      sender: { id: row.senderId, name: row.senderName },
-    }));
+    return builder.getRawMany<ChatMessage>();
   }
 }
 
