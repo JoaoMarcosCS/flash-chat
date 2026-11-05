@@ -101,9 +101,9 @@ services:
     ports:
       - "${WS_PORT:-3001}:${WS_PORT:-3001}"
 
-  consumer:
+  persist-consumer:
     <<: *backend
-    container_name: flash-chat-consumer
+    container_name: flash-chat-persist-consumer
     command: ["node", "dist/infra/consumer/server.js"]
 
 volumes:
