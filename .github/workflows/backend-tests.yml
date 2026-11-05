@@ -1,0 +1,45 @@
+name: Backend tests
+
+on:
+  push:
+    branches: [main]
+
+env:
+  HUSKY: 0
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: backend/.nvmrc
+          cache: yarn
+          cache-dependency-path: backend/yarn.lock
+
+      - run: yarn install --frozen-lockfile
+      - run: yarn typecheck
+      - run: yarn build
+      - run: yarn test
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: backend/.nvmrc
+          cache: yarn
+          cache-dependency-path: backend/yarn.lock
+
+      - run: yarn install --frozen-lockfile
+      - run: yarn test:integration
