@@ -9,7 +9,6 @@ import {
   InternalServerException,
 } from '@/shared/errors/errors';
 
-// Tipo inferido diretamente do createClient para evitar incompatibilidades de generics.
 type RedisClient = ReturnType<typeof createClient>;
 
 @injectable()
@@ -17,7 +16,7 @@ export class RedisCacheProvider implements ICacheProvider {
   private client: RedisClient;
   private logger: ILogger;
 
-  // O tsyringe garante que este construtor é chamado uma única vez (registerSingleton),
+  // O tsyringe garante que este construtor é chamado uma única vez atraves do registerSingleton,
   // portanto existe apenas uma conexão Redis durante toda a vida da aplicação.
   constructor(@inject('ILogger') logger: ILogger) {
     this.logger = logger.child('RedisCacheProvider');
@@ -35,7 +34,6 @@ export class RedisCacheProvider implements ICacheProvider {
         reconnectStrategy(retries) {
           const MAX_RETRIES = 5;
           if (retries >= MAX_RETRIES) {
-            // Desiste após 5 tentativas — evita reconexão infinita em falha permanente.
             return new InternalServerException(
               `[RedisCacheProvider] gave up after ${MAX_RETRIES} reconnection attempts`,
             );
