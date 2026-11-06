@@ -15,14 +15,23 @@ const REFRESH_LOCK = 'flash-chat.refresh';
 let pendingRefresh: Promise<void> | null = null;
 
 export function startSession(accessToken: string) {
-  const { sub, name, nickname } = jwtDecode<AccessTokenPayload>(accessToken);
-  useSessionStore.getState().setSession(accessToken, { id: sub, name, nickname });
+  const { sub, name, nickname, exp } = jwtDecode<AccessTokenPayload>(accessToken);
+  useSessionStore.getState().setSession({
+    accessToken,
+    expiresAt: exp * 1000,
+    user: { id: sub, name, nickname },
+  });
   setSessionCookie();
 }
 
 export function endSession() {
   useSessionStore.getState().clearSession();
   clearSessionCookie();
+}
+
+export function isAccessTokenExpired(): boolean {
+  const { expiresAt } = useSessionStore.getState();
+  return !expiresAt || expiresAt <= Date.now();
 }
 
 async function runRefresh(): Promise<void> {

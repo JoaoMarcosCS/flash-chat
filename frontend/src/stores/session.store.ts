@@ -8,18 +8,27 @@ export interface SessionUser {
 
 export type SessionStatus = 'unknown' | 'authenticated' | 'unauthenticated';
 
+interface Session {
+  accessToken: string;
+  expiresAt: number;
+  user: SessionUser;
+}
+
 interface SessionStore {
   status: SessionStatus;
   accessToken: string | null;
+  expiresAt: number | null;
   user: SessionUser | null;
-  setSession: (accessToken: string, user: SessionUser) => void;
+  setSession: (session: Session) => void;
   clearSession: () => void;
 }
 
 export const useSessionStore = create<SessionStore>()((set) => ({
   status: 'unknown',
   accessToken: null,
+  expiresAt: null,
   user: null,
-  setSession: (accessToken, user) => set({ status: 'authenticated', accessToken, user }),
-  clearSession: () => set({ status: 'unauthenticated', accessToken: null, user: null }),
+  setSession: (session) => set({ status: 'authenticated', ...session }),
+  clearSession: () =>
+    set({ status: 'unauthenticated', accessToken: null, expiresAt: null, user: null }),
 }));
