@@ -14,5 +14,5 @@ interface MessageStatusIconProps {
 
 export function MessageStatusIcon({ status }: MessageStatusIconProps) {
   const { Icon, label, className } = icons[status];
-  return <Icon aria-label={label} className={`size-3.5 shrink-0 ${className}`} />;
+  return <Icon role="img" aria-label={label} className={`size-3.5 shrink-0 ${className}`} />;
 }

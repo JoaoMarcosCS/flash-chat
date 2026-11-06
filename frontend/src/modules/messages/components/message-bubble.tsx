@@ -43,7 +43,7 @@ export function MessageBubble({
           )}
         >
           <RenderIf shouldRender={isGroup && !isOwn && showSender}>
-            <p className="mb-0.5 text-[13px] font-semibold">{message.sender.name}</p>
+            <p className="mb-0.5 text-xs font-semibold">{message.sender.name}</p>
           </RenderIf>
           <p className="text-[15px] leading-[1.4] wrap-break-word whitespace-pre-wrap">
             {message.content}
@@ -61,19 +61,19 @@ export function MessageBubble({
           </p>
         </div>
         <RenderIf shouldRender={status === 'failed'}>
-          <p className="mt-1 flex items-center gap-3 px-1 text-xs">
+          <p className="flex items-center gap-1 pl-1 text-xs">
             <span className="text-muted-foreground">Não enviada</span>
             <button
               type="button"
               onClick={onRetry}
-              className="cursor-pointer font-medium text-foreground underline-offset-2 hover:underline"
+              className="min-h-8 cursor-pointer rounded-md px-2 font-medium text-foreground underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
             >
               Reenviar
             </button>
             <button
               type="button"
               onClick={onDiscard}
-              className="cursor-pointer font-medium text-muted-foreground underline-offset-2 hover:underline"
+              className="min-h-8 cursor-pointer rounded-md px-2 font-medium text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
             >
               Descartar
             </button>

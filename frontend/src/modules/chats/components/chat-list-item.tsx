@@ -42,6 +42,7 @@ export function ChatListItem({ chat, currentUserId, active }: ChatListItemProps)
             <span className="truncate">{chat.displayName}</span>
             <RenderIf shouldRender={chat.readOnly}>
               <Lock
+                role="img"
                 aria-label="Somente leitura"
                 className="size-3.5 shrink-0 text-muted-foreground"
               />
