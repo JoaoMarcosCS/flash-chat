@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 interface RenderIfProps {
-  shouldRender: boolean | null | undefined;
+  shouldRender: unknown;
   children: ReactNode;
   fallback?: ReactNode;
 }
