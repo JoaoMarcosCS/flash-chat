@@ -45,6 +45,7 @@ export function ChatView() {
       <ChatHeader
         chat={chat}
         currentUserId={userId}
+        participantsOpen={showParticipants}
         onToggleParticipants={() => setShowParticipants((value) => !value)}
       />
       <MessageList

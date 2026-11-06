@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ComponentProps } from 'react';
 import { cn } from '@/lib/utils';
 
 const variants = {
@@ -30,7 +30,7 @@ export function buttonClassName({ variant = 'primary', size = 'md', className }:
   );
 }
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>, ButtonStyle {}
+interface ButtonProps extends ComponentProps<'button'>, ButtonStyle {}
 
 export function Button({ variant, size, type = 'button', className, ...props }: ButtonProps) {
   return (

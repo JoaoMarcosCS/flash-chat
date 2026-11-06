@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { X } from 'lucide-react';
 import type { Chat } from '../interface/chat.interface';
 import { RenderIf } from '@/components/common/render-if';
@@ -17,12 +20,35 @@ export function ParticipantsPanel({ chat, currentUserId, onClose }: Participants
   const participants = chat.isGroup
     ? chat.participants
     : chat.participants.filter((participant) => participant.id !== currentUserId);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const handleEscape = useEffectEvent(() => onClose());
+
+  useEffect(() => {
+    const trigger = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') handleEscape();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      trigger?.focus();
+    };
+  }, []);
 
   return (
-    <aside className="absolute inset-y-0 right-0 z-10 flex w-full max-w-sm flex-col border-l border-border bg-surface shadow-[-16px_0_40px_-24px_rgb(0_0_0/0.25)]">
+    <aside
+      id="participants-panel"
+      aria-labelledby="participants-panel-title"
+      className="absolute inset-y-0 right-0 z-10 flex w-full flex-col bg-surface md:max-w-sm md:border-l md:border-border md:shadow-[-16px_0_40px_-24px_rgb(0_0_0/0.25)]"
+    >
       <header className="flex items-center justify-between px-5 pt-5 pb-3">
-        <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-        <Button variant="ghost" size="icon-sm" aria-label="Fechar" onClick={onClose}>
+        <h3 id="participants-panel-title" className="text-lg font-semibold text-foreground">
+          {title}
+        </h3>
+        <Button ref={closeRef} variant="ghost" size="icon" aria-label="Fechar" onClick={onClose}>
           <X className="size-5" />
         </Button>
       </header>

@@ -14,10 +14,16 @@ import { Button } from '@/components/ui/button';
 interface ChatHeaderProps {
   chat: Chat;
   currentUserId: string;
+  participantsOpen: boolean;
   onToggleParticipants: () => void;
 }
 
-export function ChatHeader({ chat, currentUserId, onToggleParticipants }: ChatHeaderProps) {
+export function ChatHeader({
+  chat,
+  currentUserId,
+  participantsOpen,
+  onToggleParticipants,
+}: ChatHeaderProps) {
   const displayName = getChatDisplayName(chat, currentUserId);
   const subtitle = chat.isGroup
     ? `${chat.participants.length} participantes`
@@ -33,6 +39,8 @@ export function ChatHeader({ chat, currentUserId, onToggleParticipants }: ChatHe
           size="icon"
           aria-label={detailsLabel}
           title={detailsLabel}
+          aria-expanded={participantsOpen}
+          aria-controls="participants-panel"
           onClick={onToggleParticipants}
         >
           <RenderIf shouldRender={chat.isGroup} fallback={<Info className="size-5" />}>
