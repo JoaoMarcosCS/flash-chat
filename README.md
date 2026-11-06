@@ -241,7 +241,7 @@ Separar os serviços também muda a forma de autenticar, porque deixa de existir
 
 ```
 flash-chat/
-├─ backend/     API, servidor WebSocket e consumer de persistência (docs e ADRs em backend/docs)
+├─ backend/     API, servidor WebSocket e consumer de persistência
 ├─ frontend/    aplicação Next.js (roadmap em ROADMAP.md, design em DESIGN.md)
 ├─ docs/videos/ vídeos de explicação
 ├─ CONTEXT.md   glossário do domínio
