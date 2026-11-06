@@ -1,5 +1,5 @@
 const tones = [
-  { soft: 'bg-muted', ink: 'text-foreground' },
+  { soft: 'bg-border', ink: 'text-foreground' },
   { soft: 'bg-surface ring-1 ring-inset ring-border', ink: 'text-foreground' },
 ] as const;
 
