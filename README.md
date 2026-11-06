@@ -57,6 +57,72 @@ Essa separação dá consistência eventual entre a entrega e o histórico:
 - Toda entrega passa pelo exchange, mesmo com uma única instância de WebSocket.
 
 
+## Decisões técnicas
+
+### Filas e consistência eventual
+
+A API não grava a mensagem no banco. Ela valida, gera o id e publica o evento `message.published` no RabbitMQ. Só responde depois que o broker confirma o recebimento. A partir daí o evento segue por dois caminhos independentes: o servidor WebSocket entrega a mensagem aos participantes e o consumer de persistência grava no Postgres.
+
+Benefícios:
+
+- A entrega não espera o banco. Uma escrita lenta ou o Postgres fora do ar não atrasa a conversa.
+- Uma falha no banco não perde mensagem. O evento vai para a fila de retry (TTL de 2 minutos, até 3 tentativas). Se as tentativas acabarem, ele termina na DLQ, onde pode ser inspecionado.
+- Cada processo escala e cai de forma isolada, porque os três só se comunicam pelo broker.
+
+Trade-offs:
+
+- Por alguns instantes, a mensagem já foi entregue e ainda não está no histórico. Para deixar esse intervalo visível, o remetente acompanha os estados Pending, Published e Persisted.
+- Reentregas acontecem, então o INSERT precisa ser idempotente pelo id. Pelo mesmo motivo, a Last Message só pode avançar.
+- Tem mais coisa para operar e observar (exchange, filas, retry, DLQ), e um bug fica mais difícil de rastrear do que numa escrita direta.
+
+### Busca full-text
+
+As buscas de usuários e de conversas usam o full-text search do próprio Postgres (`to_tsvector`), com índices GIN, em vez de `LIKE '%termo%'`. Cada palavra digitada vira um prefixo e todas precisam casar, então "joa mar" encontra "João Marcos". Nomes e Nicknames usam a configuração `simple`, sem stemming, porque não faz sentido reduzir nome próprio à raiz. Já o índice de mensagens está pronto em `portuguese`, com stemming.
+
+Benefícios:
+
+- A consulta usa índice, então não varre a tabela inteira.
+- Não depende de nenhum serviço extra, como Elasticsearch: o recurso já vem no banco.
+
+Trade-offs:
+
+- A expressão da consulta precisa ser idêntica à do índice. Caso contrário, o Postgres ignora o índice sem avisar.
+- Esses índices de expressão são escritos à mão na migration, porque o TypeORM não consegue gerá-los.
+- Não há tolerância a erro de digitação nem ranking sofisticado. Para isso, o próximo passo seria `pg_trgm` ou um motor de busca dedicado.
+
+### UUIDv7
+
+Todos os ids são UUIDv7, gerados na aplicação. O v7 carrega um timestamp nos primeiros bits, então os ids saem em ordem cronológica.
+
+Benefícios:
+
+- A API gera o id da mensagem antes de ela existir no banco. Esse mesmo id viaja no evento e serve de chave para o INSERT idempotente do consumer.
+- A paginação é por cursor no próprio id (`id < cursor`, ordenado por id), sem coluna extra e sem os problemas do `OFFSET`.
+- A Last Message avança comparando ids, e a lista de conversas ordena por eles.
+- A inserção sai em ordem no índice da chave primária, o que fragmenta menos que o UUIDv4.
+
+Trade-offs:
+
+- Ocupa 16 bytes, o dobro de um `bigint`.
+- O id revela o instante de criação.
+- A ordem depende do relógio da máquina que gera o id: com várias instâncias, uma diferença de relógio pode inverter a ordem de duas mensagens muito próximas.
+
+### Testes de integração
+
+Os testes de integração sobem Postgres, RabbitMQ e Redis reais com Testcontainers, aplicam as mesmas migrations do ambiente real e chamam as rotas com Supertest. Os unitários cobrem as regras dos use cases com mocks.
+
+Benefícios:
+
+- Testam o que mock não alcança: os índices GIN, as constraints de unicidade, o INSERT idempotente, o retry e a DLQ do RabbitMQ, e os eventos publicados no exchange.
+- O schema vem das migrations, então se uma migration estiver quebrada, o teste falha.
+- Rodam no CI a cada push na `main`, em paralelo aos unitários.
+
+Trade-offs:
+
+- São mais lentos e precisam de Docker, tanto na máquina quanto no CI.
+- Rodam em série, com as tabelas truncadas antes de cada teste, então a suíte fica mais longa conforme cresce.
+
+
 ## Stack
 
 ### Backend
