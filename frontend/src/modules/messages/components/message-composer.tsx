@@ -30,7 +30,7 @@ export function MessageComposer({ readOnly, onSend }: MessageComposerProps) {
     return (
       <div className="flex items-center justify-center gap-2 border-t border-border bg-surface px-4 py-5 text-sm text-muted-foreground">
         <Lock className="size-4" />
-        Somente leitura: o outro Participant foi desativado.
+        Somente leitura: a conta da outra pessoa foi desativada.
       </div>
     );
   }

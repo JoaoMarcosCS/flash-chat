@@ -19,6 +19,13 @@ import { cn } from '@/lib/utils';
 import { FormError } from '@/components/common/form-error';
 import { UserSearch } from '@/modules/users/components/user-search';
 
+function getSelectionLabel(count: number): string {
+  const range = `Escolha de ${GROUP_MIN_PARTICIPANT_IDS} a ${GROUP_MAX_PARTICIPANT_IDS} pessoas além de você.`;
+  if (count === 0) return range;
+  const selected = count === 1 ? '1 selecionada.' : `${count} selecionadas.`;
+  return `${selected} ${range}`;
+}
+
 export function NewGroupView() {
   const {
     form,
@@ -63,9 +70,8 @@ export function NewGroupView() {
           />
         </Field>
         <div className="flex flex-col gap-2">
-          <p className="px-1 text-sm text-muted-foreground">
-            {participants.length} selecionados, de {GROUP_MIN_PARTICIPANT_IDS} a{' '}
-            {GROUP_MAX_PARTICIPANT_IDS} além de você
+          <p aria-live="polite" className="px-1 text-sm text-muted-foreground">
+            {getSelectionLabel(participants.length)}
           </p>
           <ul className="flex flex-wrap gap-2">
             <RenderItems items={participants} getKey={(participant) => participant.id}>
