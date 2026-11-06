@@ -3,14 +3,13 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, MessageSquareText, Users } from 'lucide-react';
+import { MessageSquareText, Users } from 'lucide-react';
 import { Brand } from './brand';
 import { RenderIf } from '@/components/common/render-if';
 import { RenderItems } from '@/components/common/render-items';
 import { Avatar } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useLogout } from '@/modules/auth/hooks/use-logout';
+import { LogoutButton } from '@/modules/auth/components/logout-button';
 import { ConnectionIndicator } from '@/modules/realtime/components/connection-indicator';
 import { useSessionStore } from '@/stores/session.store';
 
@@ -26,7 +25,6 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const user = useSessionStore((state) => state.user);
-  const logout = useLogout();
 
   return (
     <div className="flex h-dvh overflow-hidden">
@@ -63,15 +61,7 @@ export function AppShell({ children }: AppShellProps) {
               </span>
             )}
           </RenderIf>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Sair"
-            title="Sair"
-            onClick={() => logout.mutate()}
-          >
-            <LogOut className="size-[18px]" strokeWidth={1.75} />
-          </Button>
+          <LogoutButton />
         </div>
       </nav>
       <div className="flex min-w-0 flex-1 flex-col">

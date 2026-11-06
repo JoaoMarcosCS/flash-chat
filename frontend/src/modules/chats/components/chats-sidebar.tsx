@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { LogOut, Search, SquarePen, UserRoundPlus } from 'lucide-react';
+import { Search, SquarePen, UserRoundPlus } from 'lucide-react';
 import type { ChatType } from '../interface/chat.interface';
 import { ChatList } from './chat-list';
 import { ChatTypeTabs } from './chat-type-tabs';
-import { Button, buttonClassName } from '@/components/ui/button';
+import { buttonClassName } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { SEARCH_MAX_LENGTH, toSearchTerm } from '@/lib/search-term';
-import { useLogout } from '@/modules/auth/hooks/use-logout';
+import { LogoutButton } from '@/modules/auth/components/logout-button';
 
 const SIDEBAR_CONTENT = {
   direct: {
@@ -36,7 +36,6 @@ interface ChatsSidebarProps {
 export function ChatsSidebar({ type }: ChatsSidebarProps) {
   const [search, setSearch] = useState('');
   const term = useDebouncedValue(toSearchTerm(search));
-  const logout = useLogout();
   const { title, createLabel, createHref, CreateIcon, searchLabel } = SIDEBAR_CONTENT[type];
 
   return (
@@ -52,16 +51,7 @@ export function ChatsSidebar({ type }: ChatsSidebarProps) {
           >
             <CreateIcon className="size-5" />
           </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Sair"
-            title="Sair"
-            className="md:hidden"
-            onClick={() => logout.mutate()}
-          >
-            <LogOut className="size-5" />
-          </Button>
+          <LogoutButton className="md:hidden" />
         </div>
       </header>
       <div className="px-5 pb-3 md:hidden">
