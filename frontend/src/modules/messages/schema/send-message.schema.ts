@@ -1,0 +1,3 @@
+export const MESSAGE_MAX_LENGTH = 1000;
+
+export const MESSAGE_COUNTER_THRESHOLD = 900;
