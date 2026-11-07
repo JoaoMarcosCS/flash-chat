@@ -1,6 +1,7 @@
 'use client';
 
 import { useProfileQuery } from '../hooks/use-profile-query';
+import { DeactivateUserSection } from './deactivate-user-section';
 import { ProfileForm } from './profile-form';
 import { FormError } from '@/components/common/form-error';
 import { RenderIf } from '@/components/common/render-if';
@@ -33,6 +34,7 @@ export function ProfileView() {
           >
             {query.data && <ProfileForm profile={query.data} />}
           </RenderIf>
+          <DeactivateUserSection />
         </div>
       </div>
     </div>
