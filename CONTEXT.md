@@ -51,7 +51,7 @@ _Avoid_: Grupo de chat, sala
 ### Mensagens
 
 **Message**:
-Conteúdo enviado por um único User em um único Chat. Recebe identidade e horário no momento do envio, antes de ser publicada. É imutável: não pode ser editada nem apagada. O conteúdo tem de 1 a 1000 caracteres, sem contar os espaços nas pontas.
+Conteúdo enviado por um único User em um único Chat. Recebe identidade e horário no momento do envio, antes de ser publicada. O conteúdo tem de 1 a 1000 caracteres, sem contar os espaços nas pontas. Depois de Persisted, só o Sender pode editar ou apagar a Message, e só num Chat que não esteja Read-only. Não existe histórico de versões nem prazo para a mudança.
 _Avoid_: Mensagem de chat, post
 
 **Message Status**:
@@ -69,6 +69,21 @@ _Avoid_: Enviada, salva
 **Persisted**:
 Message Status de uma Message gravada no histórico do Chat. Acontece de forma assíncrona, depois de Published. Toda Message do histórico é Persisted.
 _Avoid_: Salva, armazenada
+
+**Content Status**:
+Situação do conteúdo de uma Message: Original, Edited ou Deleted. Fica guardado junto com a Message e todos os Participants veem. É independente do Message Status.
+_Avoid_: Status (sozinho), versão
+
+**Original**:
+Content Status de uma Message que nunca foi editada nem apagada.
+
+**Edited**:
+Content Status de uma Message cujo conteúdo o Sender trocou. Guarda só o conteúdo atual e o horário da última edição. Uma Message Edited ainda pode ser editada de novo ou apagada.
+_Avoid_: Alterada, modificada
+
+**Deleted**:
+Content Status de uma Message que o Sender apagou. A Message continua no histórico, na mesma posição, mas sem conteúdo, e não pode mais ser editada nem apagada. Se for a Last Message, o Chat mantém a posição na lista.
+_Avoid_: Removida, excluída
 
 **Delivery**:
 Envio em tempo real de uma Message Published aos Participants conectados do Chat.
