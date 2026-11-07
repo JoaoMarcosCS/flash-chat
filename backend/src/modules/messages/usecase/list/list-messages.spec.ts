@@ -83,7 +83,26 @@ describe('ListMessagesUseCase', () => {
 
     const result = await useCase.execute({ chatId, cursor, limit: 20 }, userId);
 
-    expect(result).toEqual({ data: [makeMessage('b')], nextCursor: null });
+    expect(result).toEqual({
+      data: [{ ...makeMessage('b'), contentStatus: 'original' }],
+      nextCursor: null,
+    });
+  });
+
+  it('should return the content status name of edited and deleted messages', async () => {
+    const editedAt = new Date('2026-10-27T12:01:00Z');
+    const deletedAt = new Date('2026-10-27T12:02:00Z');
+    vi.mocked(messageRepository.findByChat).mockResolvedValueOnce([
+      { ...makeMessage('b'), content: null, contentStatus: ContentStatus.DELETED, deletedAt },
+      { ...makeMessage('a'), content: 'Olá', contentStatus: ContentStatus.EDITED, editedAt },
+    ]);
+
+    const result = await useCase.execute({ chatId, limit: 20 }, userId);
+
+    expect(result.data).toMatchObject([
+      { id: 'b', content: null, contentStatus: 'deleted', editedAt: null, deletedAt },
+      { id: 'a', content: 'Olá', contentStatus: 'edited', editedAt, deletedAt: null },
+    ]);
   });
 
   it('should return the last message id as nextCursor when there is a next page', async () => {

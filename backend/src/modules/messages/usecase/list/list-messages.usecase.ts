@@ -1,12 +1,13 @@
 import { inject, injectable } from 'tsyringe';
-import { ChatMessage, IMessageRepository } from '../../repository/message-repository.interface';
+import { IMessageRepository } from '../../repository/message-repository.interface';
+import { ChatMessageResponse, toChatMessageResponse } from '../../mapper/message.mapper';
 import { ListMessagesDTO } from './list-messages.schema';
 import { IChatRepository } from '@/modules/chats/repository/chat-repository.interface';
 import { MessageError } from '@/shared/enums/erros.enum';
 import { NotFoundException } from '@/shared/errors/errors';
 
 export type ListMessagesResponse = {
-  data: ChatMessage[];
+  data: ChatMessageResponse[];
   nextCursor: string | null;
 };
 
@@ -37,7 +38,7 @@ export class ListMessagesUseCase {
     const page = hasNextPage ? messages.slice(0, limit) : messages;
 
     return {
-      data: page,
+      data: page.map(toChatMessageResponse),
       nextCursor: hasNextPage ? page[page.length - 1].id : null,
     };
   }
