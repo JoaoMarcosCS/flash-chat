@@ -25,7 +25,8 @@ src/
 │  ├─ (public)/             login, register
 │  └─ (private)/            layout com SessionGate + RealtimeConnector + AppShell
 │     ├─ chats/             Direct Chats: layout com a lista ao lado; page (vazio), [id], new
-│     └─ groups/            Groups: layout com a lista ao lado; page (vazio), [id], new
+│     ├─ groups/            Groups: layout com a lista ao lado; page (vazio), [id], new
+│     └─ profile/           Perfil: edição dos dados do User e desativação da conta
 ├─ modules/<módulo>/        auth, users, chats, messages, realtime
 │  ├─ components/           componentes do módulo
 │  ├─ hooks/                use-<ação>-mutation.ts, use-<ação>-query.ts, use-<ação>-form.ts
@@ -61,6 +62,7 @@ Um módulo importa de outro só o que for público (componente, hook, tipo ou fu
 - `refreshSession()` é único por aba (promise compartilhada) e por navegador (`navigator.locks`), porque o refresh token é trocado a cada uso. O `useProactiveRefresh` renova 1 minuto antes do `exp`.
 - `lib/api.ts` envia o Bearer e, num `401`, faz o refresh e repete a requisição uma vez. As rotas de `/auth/*` e o `POST /users` usam `lib/public-api.ts`, que não tem interceptors.
 - `startSession(accessToken)` é o único jeito de entrar numa sessão (login e refresh). Ele lê `sub`, `name`, `nickname` e `exp` do payload do JWT.
+- `useEndSession()` (auth) é a limpeza do cliente: `endSession`, `queryClient.clear()` e o `live-messages.store`. Vale para o logout, para a desativação da conta e para o fechamento `4003` do WebSocket.
 - Nada da área `(private)` é renderizado no servidor, porque o `SessionGate` espera a sessão no navegador. Por isso o `next.config.ts` usa `experimental.instantInsights.validationLevel: 'manual-warning'`: com o padrão, o Next acusa "Could not validate that a segment in your UI has instant navigation" em toda rota privada. Só os segmentos com `export const instant = true` são validados.
 
 ## Messages e tempo real
@@ -72,6 +74,8 @@ Um módulo importa de outro só o que for público (componente, hook, tipo ou fu
 - `modules/realtime`: `RealtimeSocket` conecta com o access token da store, reconecta com espera de 1s a 30s, faz refresh quando o token venceu e, depois de cada reconexão, invalida `['chats']` e `['messages']`. Os eventos passam por `handleRealtimeEvent`, que atualiza o cache de chats (`modules/chats/cache`) e o `live-messages.store`.
 - A lista de Chats é separada por tipo (`GET /chats?type=direct|group`, chave `['chats', type, search]`). A lista sem busca de cada tipo (`['chats', type, '']`) é atualizada direto no cache; as buscas são invalidadas.
 - Uma Message `published` cujo id já veio no histórico (que sai do Postgres) aparece como `persisted`, porque o `message.persisted` pode se perder com o socket suspenso no celular. O `RealtimeSocket` reconecta na hora quando a aba volta a ficar visível ou a rede volta.
+- `user.deactivated` (`{ user: { id } }`) marca como Read-only os Direct Chats em cache com esse User (`applyUserDeactivated`) e invalida a lista de Direct Chats. Groups não mudam, porque a API não devolve o `status` dos Participants.
+- O fechamento `4003` ("Usuário desativado") para o `RealtimeSocket` sem reconectar e encerra a sessão, mandando para `/login`.
 
 ## Design
 

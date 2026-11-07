@@ -16,6 +16,7 @@ Chat em tempo real para conversas diretas e em grupo. A mensagem é entregue a q
 - Entrega em tempo real por WebSocket, com reconexão automática e aviso de conexão na tela.
 - Status de cada mensagem enviada: enviando (relógio), enviada (um check) e salva (dois checks).
 - Conversa somente leitura quando a outra pessoa desativa a conta: o histórico continua visível, mas não aceita novas mensagens.
+- Perfil: edição de nome, Nickname, e-mail e senha com confirmação da senha atual, e desativação da conta sem volta, que encerra as conexões abertas e deixa os Direct Chats somente leitura na hora.
 - Layout responsivo: no celular, a lista e a conversa ocupam a tela inteira, uma de cada vez.
 
 ## Arquitetura
