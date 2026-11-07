@@ -7,11 +7,11 @@ Chat em tempo real entre usuários cadastrados: um usuário encontra outros usu�
 ### Pessoas
 
 **User**:
-Pessoa cadastrada no Flash Chat, que pode ser encontrada por outros usuários e participar de chats. Existe independentemente de participar de algum chat. Entra no sistema com email e senha, que são privados.
+Pessoa cadastrada no Flash Chat, que pode ser encontrada por outros usuários e participar de chats. Existe independentemente de participar de algum chat. Entra no sistema com email e senha, que são privados. Pode editar o próprio Name, Nickname, email e senha, sempre confirmando a senha atual e seguindo as mesmas regras do cadastro. Trocar email ou senha não encerra as sessões já abertas.
 _Avoid_: Conta, cliente, membro
 
 **Active / Deactivated**:
-Situação da conta de um User. Só um User Active consegue entrar no sistema. Um User Deactivated não aparece na busca e não pode ser incluído em novos Chats. A desativação não tem volta, e o email e o Nickname de um User Deactivated continuam ocupados: ninguém mais pode usá-los.
+Situação da conta de um User. Só um User Active consegue entrar no sistema. Um User Deactivated não aparece na busca e não pode ser incluído em novos Chats. A desativação não tem volta, e o email e o Nickname de um User Deactivated continuam ocupados: ninguém mais pode usá-los. Só o próprio User desativa a conta, confirmando a senha atual. Os Participants dos Chats dele ficam sabendo na hora, e ele perde o acesso em todas as abas abertas.
 _Avoid_: Status (sozinho), bloqueado, banido, online/offline
 
 **Nickname**:
