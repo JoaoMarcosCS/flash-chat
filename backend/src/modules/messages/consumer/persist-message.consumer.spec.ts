@@ -28,6 +28,9 @@ const payload = {
 const mockMessageRepository = (): IMessageRepository => ({
   persist: vi.fn().mockResolvedValue(undefined),
   findByChat: vi.fn(),
+  findById: vi.fn(),
+  edit: vi.fn(),
+  delete: vi.fn(),
 });
 
 const mockQueueProvider = (): IQueueProvider => ({

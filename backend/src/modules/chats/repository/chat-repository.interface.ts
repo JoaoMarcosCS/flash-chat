@@ -25,7 +25,7 @@ export type ChatListItem = Pick<ChatEntity, 'id' | 'isGroup' | 'title'> & {
   otherParticipant: Pick<UserEntity, 'name' | 'status'> | null;
   lastMessage: {
     id: string;
-    content: string;
+    content: string | null;
     sender: Pick<UserEntity, 'id' | 'name'>;
   } | null;
 };

@@ -4,6 +4,7 @@ import { LIST_MESSAGES_DEFAULT_LIMIT, ListMessagesSchema } from './list-messages
 import { ChatMessage, IMessageRepository } from '../../repository/message-repository.interface';
 import { ChatDetails, IChatRepository } from '@/modules/chats/repository/chat-repository.interface';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
+import { ContentStatus } from '@/shared/enums/messages/content-status.enum';
 import { MessageError } from '@/shared/enums/erros.enum';
 import { NotFoundException } from '@/shared/errors/errors';
 
@@ -31,7 +32,10 @@ const chat: ChatDetails = {
 const makeMessage = (id: string): ChatMessage => ({
   id,
   content: `Message ${id}`,
+  contentStatus: ContentStatus.ORIGINAL,
   createdAt: new Date('2026-10-27T12:00:00Z'),
+  editedAt: null,
+  deletedAt: null,
   sender: { id: userId, name: 'Ana Souza' },
 });
 
@@ -47,6 +51,9 @@ const mockChatRepository = (): IChatRepository => ({
 const mockMessageRepository = (): IMessageRepository => ({
   persist: vi.fn(),
   findByChat: vi.fn().mockResolvedValue([]),
+  findById: vi.fn(),
+  edit: vi.fn(),
+  delete: vi.fn(),
 });
 
 describe('ListMessagesUseCase', () => {
