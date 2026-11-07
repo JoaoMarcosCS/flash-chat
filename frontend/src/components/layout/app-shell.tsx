@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MessageSquareText, Users } from 'lucide-react';
+import { CircleUserRound, MessageSquareText, Users } from 'lucide-react';
 import { Brand } from './brand';
 import { RenderIf } from '@/components/common/render-if';
 import { RenderItems } from '@/components/common/render-items';
@@ -16,6 +16,7 @@ import { useSessionStore } from '@/stores/session.store';
 const NAV_ITEMS = [
   { href: '/chats', label: 'Conversas', Icon: MessageSquareText },
   { href: '/groups', label: 'Grupos', Icon: Users },
+  { href: '/profile', label: 'Perfil', Icon: CircleUserRound },
 ];
 
 interface AppShellProps {

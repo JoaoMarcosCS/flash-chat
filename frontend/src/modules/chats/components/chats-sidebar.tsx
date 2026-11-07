@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, SquarePen, UserRoundPlus } from 'lucide-react';
+import { CircleUserRound, Search, SquarePen, UserRoundPlus } from 'lucide-react';
 import type { ChatType } from '../interface/chat.interface';
 import { ChatList } from './chat-list';
 import { ChatTypeTabs } from './chat-type-tabs';
@@ -50,6 +50,14 @@ export function ChatsSidebar({ type }: ChatsSidebarProps) {
             className={buttonClassName({ variant: 'ghost', size: 'icon' })}
           >
             <CreateIcon className="size-5" />
+          </Link>
+          <Link
+            href="/profile"
+            aria-label="Perfil"
+            title="Perfil"
+            className={buttonClassName({ variant: 'ghost', size: 'icon', className: 'md:hidden' })}
+          >
+            <CircleUserRound className="size-5" />
           </Link>
           <LogoutButton className="md:hidden" />
         </div>
