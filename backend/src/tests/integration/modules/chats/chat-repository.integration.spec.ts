@@ -279,4 +279,26 @@ describe('ChatRepository (integração)', () => {
     expect(byNickname.map((chat) => chat.isGroup)).toEqual([false]);
     expect(bySelf).toEqual([]);
   });
+
+  it('should find the distinct co-participants of every chat of the user', async () => {
+    const repository = new ChatRepository();
+    const [ana, bruno, carla, davi] = await Promise.all([
+      createUser('Ana Souza', 'ana'),
+      createUser('Bruno Lima', 'bruno'),
+      createUser('Carla Dias', 'carla'),
+      createUser('Davi Melo', 'davi'),
+    ]);
+    await repository.createDirectChat({ initiatorId: ana.id, participantId: bruno.id });
+    await repository.createGroup({
+      initiatorId: bruno.id,
+      title: 'Viagem',
+      participantIds: [ana.id, carla.id],
+    });
+    await repository.createDirectChat({ initiatorId: carla.id, participantId: davi.id });
+
+    const ids = await repository.findCoParticipantIds(ana.id);
+
+    expect(ids.sort()).toEqual([bruno.id, carla.id].sort());
+    expect(await repository.findCoParticipantIds(uuidv7())).toEqual([]);
+  });
 });

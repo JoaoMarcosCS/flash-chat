@@ -45,4 +45,5 @@ export interface IChatRepository {
   findById(chatId: string, userId: string): Promise<ChatDetails | null>;
   findByParticipant(params: FindChatsByParticipantParams): Promise<ChatListItem[]>;
   enrichWithParticipants(chat: ChatEntity): Promise<ChatDetails>;
+  findCoParticipantIds(userId: string): Promise<string[]>;
 }

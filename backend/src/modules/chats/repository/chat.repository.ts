@@ -224,6 +224,21 @@ export class ChatRepository implements IChatRepository {
 
     return builder.getRawMany<ChatListItem>();
   }
+
+  async findCoParticipantIds(userId: string): Promise<string[]> {
+    const rows = await AppDataSource.manager
+      .createQueryBuilder(ChatParticipantEntity, 'me')
+      .innerJoin(
+        ChatParticipantEntity,
+        'cp',
+        'cp.chat_id = me.chat_id AND cp.user_id <> me.user_id',
+      )
+      .select('DISTINCT cp.user_id', 'id')
+      .where('me.user_id = :userId', { userId })
+      .getRawMany<{ id: string }>();
+
+    return rows.map(({ id }) => id);
+  }
 }
 
 // Função para gerar a chave única de um chat direto entre dois usuários

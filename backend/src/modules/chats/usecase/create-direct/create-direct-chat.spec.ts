@@ -50,6 +50,7 @@ const mockChatRepository = (): IChatRepository => ({
   findById: vi.fn(),
   findByParticipant: vi.fn(),
   enrichWithParticipants: vi.fn(),
+  findCoParticipantIds: vi.fn(),
 });
 
 const mockUserRepository = (): IUserRepository => ({
