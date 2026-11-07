@@ -74,6 +74,34 @@ export async function applyLastMessage(
   invalidateSearches(queryClient);
 }
 
+export function applyLastMessageContent(
+  queryClient: QueryClient,
+  chatId: string,
+  messageId: string,
+  content: string | null,
+) {
+  queryClient.setQueriesData<InfinitePages<ChatListItem>>({ queryKey: ['chats'] }, (data) => {
+    if (!data) return data;
+    return {
+      ...data,
+      pages: data.pages.map((page) => ({
+        ...page,
+        data: page.data.map((chat) =>
+          chat.id === chatId && chat.lastMessage?.id === messageId
+            ? {
+                ...chat,
+                lastMessage: {
+                  ...chat.lastMessage,
+                  content: content?.slice(0, LAST_MESSAGE_PREVIEW_LENGTH) ?? null,
+                },
+              }
+            : chat,
+        ),
+      })),
+    };
+  });
+}
+
 export function markChatReadOnly(queryClient: QueryClient, chatId: string) {
   queryClient.setQueryData<Chat>(
     chatQueryKey(chatId),

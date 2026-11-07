@@ -1,5 +1,10 @@
 import { create } from 'zustand';
-import type { ChatMessage, MessageStatus, PublishedMessage } from '../interface/message.interface';
+import type {
+  ChatMessage,
+  MessageChange,
+  MessageStatus,
+  PublishedMessage,
+} from '../interface/message.interface';
 
 interface LiveMessagesStore {
   byChat: Record<string, ChatMessage[]>;
@@ -13,6 +18,7 @@ interface LiveMessagesStore {
   ) => void;
   markPersisted: (id: string) => void;
   setStatus: (chatId: string, clientId: string, status: MessageStatus) => void;
+  applyChange: (chatId: string, id: string, change: MessageChange) => void;
   remove: (chatId: string, clientId: string) => void;
   clear: () => void;
 }
@@ -69,6 +75,16 @@ export const useLiveMessagesStore = create<LiveMessagesStore>()((set) => ({
         ...state.byChat,
         [chatId]: (state.byChat[chatId] ?? []).map((message) =>
           message.clientId === clientId ? { ...message, status } : message,
+        ),
+      },
+    })),
+
+  applyChange: (chatId, id, change) =>
+    set((state) => ({
+      byChat: {
+        ...state.byChat,
+        [chatId]: (state.byChat[chatId] ?? []).map((message) =>
+          message.id === id ? { ...message, ...change } : message,
         ),
       },
     })),

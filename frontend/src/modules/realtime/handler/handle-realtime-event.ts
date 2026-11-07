@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { RealtimeEvent } from '../interface/realtime-event.interface';
 import { addCreatedChat, applyLastMessage } from '@/modules/chats/cache/chats-cache';
+import { applyDeletedMessage, applyEditedMessage } from '@/modules/messages/cache/messages-cache';
 import { useLiveMessagesStore } from '@/modules/messages/store/live-messages.store';
 
 export function handleRealtimeEvent(
@@ -27,6 +28,12 @@ export function handleRealtimeEvent(
     }
     case 'message.persisted':
       liveMessages.markPersisted(event.data.message.id);
+      break;
+    case 'message.edited':
+      applyEditedMessage(queryClient, event.data.message);
+      break;
+    case 'message.deleted':
+      applyDeletedMessage(queryClient, event.data.message);
       break;
   }
 }
