@@ -33,7 +33,9 @@ const ChatListItemSchema = z
     lastMessage: z
       .object({
         id: z.uuid(),
-        content: z.string().meta({ description: 'Truncado em 100 caracteres' }),
+        content: z.string().nullable().meta({
+          description: 'Truncado em 100 caracteres. null quando a Last Message foi apagada',
+        }),
         sender: z.object({ id: z.uuid(), name: z.string() }),
       })
       .nullable(),
