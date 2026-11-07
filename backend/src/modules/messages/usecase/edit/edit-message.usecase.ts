@@ -7,7 +7,7 @@ import { IChatRepository } from '@/modules/chats/repository/chat-repository.inte
 import { ILogger } from '@/infra/logger/logger.interface';
 import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
 import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
-import { ContentStatus } from '@/shared/enums/messages/content-status.enum';
+import { CONTENT_STATUS_NAMES, ContentStatusName } from '../../mapper/message.mapper';
 import { MessageError } from '@/shared/enums/erros.enum';
 import { ConflictException } from '@/shared/errors/errors';
 
@@ -15,7 +15,7 @@ export type EditMessageResponse = {
   id: string;
   chatId: string;
   content: string;
-  contentStatus: ContentStatus;
+  contentStatus: ContentStatusName;
   editedAt: Date | null;
 };
 
@@ -49,7 +49,7 @@ export class EditMessageUseCase {
         id,
         chatId: chat.id,
         content,
-        contentStatus: message.contentStatus,
+        contentStatus: CONTENT_STATUS_NAMES[message.contentStatus],
         editedAt: message.editedAt,
       };
     }
@@ -73,6 +73,6 @@ export class EditMessageUseCase {
       this.logger.error('Failed to publish message.edited', { chatId: chat.id, id, error });
     }
 
-    return { id, chatId: chat.id, content, contentStatus: ContentStatus.EDITED, editedAt };
+    return { id, chatId: chat.id, content, contentStatus: 'edited', editedAt };
   }
 }

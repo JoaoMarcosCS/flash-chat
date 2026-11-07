@@ -121,7 +121,7 @@ describe('EditMessageUseCase', () => {
       id: messageId,
       chatId,
       content: 'Olá',
-      contentStatus: ContentStatus.EDITED,
+      contentStatus: 'edited',
       editedAt: expect.any(Date),
     });
   });
@@ -140,7 +140,7 @@ describe('EditMessageUseCase', () => {
       id: messageId,
       chatId,
       content: 'Oi',
-      contentStatus: ContentStatus.EDITED,
+      contentStatus: 'edited',
       editedAt,
     });
   });
@@ -150,7 +150,7 @@ describe('EditMessageUseCase', () => {
 
     const result = await execute();
 
-    expect(result.contentStatus).toBe(ContentStatus.EDITED);
+    expect(result.contentStatus).toBe('edited');
   });
 
   it('should throw not found when the chat does not exist or the user is not a participant', async () => {
