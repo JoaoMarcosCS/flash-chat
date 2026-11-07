@@ -9,9 +9,12 @@ import {
   Relation,
 } from 'typeorm';
 import { ChatParticipantEntity } from '@/modules/chats/entity/chat-participant.entity';
+import { ContentStatus } from '@/shared/enums/messages/content-status.enum';
 
 @Entity('messages')
 @Check('CK_messages_content', `char_length("content") BETWEEN 1 AND 1000`)
+@Check('CK_messages_content_status', `"content_status" IN (1, 2, 3)`)
+@Check('CK_messages_deleted_content', `("content_status" = 3) = ("content" IS NULL)`)
 @Index('IDX_messages_chat', ['chatId', 'id'])
 @Index('IDX_messages_search', { synchronize: false })
 export class MessageEntity {
@@ -35,9 +38,18 @@ export class MessageEntity {
   ])
   sender: Relation<ChatParticipantEntity>;
 
-  @Column({ type: 'text' })
-  content: string;
+  @Column({ type: 'text', nullable: true })
+  content: string | null;
+
+  @Column({ name: 'content_status', type: 'smallint', default: ContentStatus.ORIGINAL })
+  contentStatus: ContentStatus;
 
   @Column({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
+
+  @Column({ name: 'edited_at', type: 'timestamptz', nullable: true })
+  editedAt: Date | null;
+
+  @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt: Date | null;
 }
