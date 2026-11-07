@@ -118,3 +118,12 @@ export function markChatReadOnly(queryClient: QueryClient, chatId: string) {
     };
   });
 }
+
+export function applyUserDeactivated(queryClient: QueryClient, userId: string) {
+  queryClient.getQueriesData<Chat>({ queryKey: ['chat'] }).forEach(([, chat]) => {
+    if (chat && !chat.isGroup && chat.participants.some(({ id }) => id === userId)) {
+      markChatReadOnly(queryClient, chat.id);
+    }
+  });
+  void queryClient.invalidateQueries({ queryKey: ['chats', 'direct'] });
+}

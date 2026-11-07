@@ -1,6 +1,10 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { RealtimeEvent } from '../interface/realtime-event.interface';
-import { addCreatedChat, applyLastMessage } from '@/modules/chats/cache/chats-cache';
+import {
+  addCreatedChat,
+  applyLastMessage,
+  applyUserDeactivated,
+} from '@/modules/chats/cache/chats-cache';
 import { applyDeletedMessage, applyEditedMessage } from '@/modules/messages/cache/messages-cache';
 import { useLiveMessagesStore } from '@/modules/messages/store/live-messages.store';
 
@@ -34,6 +38,9 @@ export function handleRealtimeEvent(
       break;
     case 'message.deleted':
       applyDeletedMessage(queryClient, event.data.message);
+      break;
+    case 'user.deactivated':
+      applyUserDeactivated(queryClient, event.data.user.id);
       break;
   }
 }

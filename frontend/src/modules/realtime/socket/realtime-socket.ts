@@ -2,6 +2,7 @@ import type { ConnectionStatus, RealtimeEvent } from '../interface/realtime-even
 import { env } from '@/environment/env';
 
 const TOKEN_EXPIRED_CODE = 4001;
+const USER_DEACTIVATED_CODE = 4003;
 const NORMAL_CLOSE_CODE = 1000;
 const INITIAL_DELAY_MS = 1000;
 const MAX_DELAY_MS = 30_000;
@@ -13,6 +14,7 @@ interface RealtimeSocketOptions {
   onEvent: (event: RealtimeEvent) => void;
   onStatus: (status: ConnectionStatus) => void;
   onReconnect: () => void;
+  onDeactivated: () => void;
 }
 
 export class RealtimeSocket {
@@ -73,6 +75,11 @@ export class RealtimeSocket {
 
     socket.onclose = ({ code }) => {
       if (this.stopped || this.socket !== socket) return;
+      if (code === USER_DEACTIVATED_CODE) {
+        this.stop();
+        this.options.onDeactivated();
+        return;
+      }
       this.options.onStatus('closed');
       this.reconnect(code);
     };

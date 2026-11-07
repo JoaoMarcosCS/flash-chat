@@ -10,6 +10,7 @@ export type RealtimeEvent =
   | { type: 'message.published'; data: { message: PublishedMessage } }
   | { type: 'message.persisted'; data: { message: { id: string; chatId: string } } }
   | { type: 'message.edited'; data: { message: EditedMessage } }
-  | { type: 'message.deleted'; data: { message: DeletedMessage } };
+  | { type: 'message.deleted'; data: { message: DeletedMessage } }
+  | { type: 'user.deactivated'; data: { user: { id: string } } };
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'open' | 'closed';
