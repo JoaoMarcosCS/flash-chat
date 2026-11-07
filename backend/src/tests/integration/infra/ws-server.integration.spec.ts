@@ -10,7 +10,7 @@ import { RabbitMQQueueProvider } from '@/infra/queue/rabbitmq-queue.provider';
 import { logger } from '@/infra/logger';
 import { Exchange, RoutingKey } from '@/shared/enums/queue/queue.enum';
 import { ConnectionRegistry } from '@/infra/ws/connection-registry';
-import { WsEventsConsumer } from '@/infra/ws/ws-events.consumer';
+import { USER_DEACTIVATED_CLOSE_CODE, WsEventsConsumer } from '@/infra/ws/ws-events.consumer';
 import { createWsServer, TOKEN_EXPIRED_CLOSE_CODE } from '@/infra/ws';
 
 type Client = { socket: WebSocket; events: unknown[] };
@@ -123,5 +123,30 @@ describe('WebSocket server (integração)', () => {
 
     expect(closeCode).toBe(TOKEN_EXPIRED_CLOSE_CODE);
     expect(registry.count(eva.id)).toBe(0);
+  });
+
+  it('should notify the participants and close every socket of a deactivated user with 4003', async () => {
+    const [fabio, gabi] = [makeUser('Fabio'), makeUser('Gabi')];
+    const fabioPhone = await connect(`?token=${tokenFor(fabio)}`);
+    const fabioLaptop = await connect(`?token=${tokenFor(fabio)}`);
+    const gabiPhone = await connect(`?token=${tokenFor(gabi)}`);
+    const closeCodes: number[] = [];
+    [fabioPhone, fabioLaptop].forEach(({ socket }) =>
+      socket.on('close', (code) => closeCodes.push(code)),
+    );
+
+    await queue.publishExchange(Exchange.EVENTS, RoutingKey.USER_DEACTIVATED, {
+      participantIds: [gabi.id],
+      user: { id: fabio.id },
+    });
+
+    await waitFor(() => closeCodes.length === 2 && gabiPhone.events.length === 1);
+
+    expect(closeCodes).toEqual([USER_DEACTIVATED_CLOSE_CODE, USER_DEACTIVATED_CLOSE_CODE]);
+    expect(gabiPhone.events).toEqual([
+      { type: 'user.deactivated', data: { user: { id: fabio.id } } },
+    ]);
+    expect(gabiPhone.socket.readyState).toBe(WebSocket.OPEN);
+    await waitFor(() => registry.count(fabio.id) === 0);
   });
 });

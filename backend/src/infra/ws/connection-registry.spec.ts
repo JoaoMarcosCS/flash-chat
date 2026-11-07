@@ -3,7 +3,7 @@ import { WebSocket } from 'ws';
 import { ConnectionRegistry } from './connection-registry';
 
 const makeSocket = (readyState: number = WebSocket.OPEN) =>
-  ({ readyState, send: vi.fn() }) as unknown as WebSocket;
+  ({ readyState, send: vi.fn(), close: vi.fn() }) as unknown as WebSocket;
 
 describe('ConnectionRegistry', () => {
   it('should send to every open socket of each user once', () => {
@@ -41,5 +41,20 @@ describe('ConnectionRegistry', () => {
 
     registry.remove('ana', laptop);
     expect(registry.count('ana')).toBe(0);
+  });
+
+  it('should close every socket of the user with the given code', () => {
+    const registry = new ConnectionRegistry();
+    const [phone, laptop, other] = [makeSocket(), makeSocket(), makeSocket()];
+    registry.add('ana', phone);
+    registry.add('ana', laptop);
+    registry.add('bruno', other);
+
+    registry.close('ana', 4003, 'Usuário desativado');
+
+    expect(phone.close).toHaveBeenCalledWith(4003, 'Usuário desativado');
+    expect(laptop.close).toHaveBeenCalledWith(4003, 'Usuário desativado');
+    expect(other.close).not.toHaveBeenCalled();
+    expect(() => registry.close('carla', 4003, 'Usuário desativado')).not.toThrow();
   });
 });

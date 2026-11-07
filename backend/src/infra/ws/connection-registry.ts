@@ -44,4 +44,10 @@ export class ConnectionRegistry {
 
     return sent;
   }
+
+  close(userId: string, code: number, reason: string): void {
+    for (const socket of [...(this.sockets.get(userId) ?? [])]) {
+      socket.close(code, reason);
+    }
+  }
 }

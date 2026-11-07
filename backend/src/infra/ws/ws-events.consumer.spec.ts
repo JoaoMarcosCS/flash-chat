@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { toDelivery, WsEventsConsumer } from './ws-events.consumer';
+import { toDelivery, USER_DEACTIVATED_CLOSE_CODE, WsEventsConsumer } from './ws-events.consumer';
 import { ConnectionRegistry } from './connection-registry';
 import { IQueueProvider } from '@/infra/queue/queue-provider.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
@@ -23,7 +23,10 @@ const mockLogger = (): ILogger => ({
 
 const makeConsumer = () => {
   const queue = mockQueueProvider();
-  const registry = { send: vi.fn().mockReturnValue(1) } as unknown as ConnectionRegistry;
+  const registry = {
+    send: vi.fn().mockReturnValue(1),
+    close: vi.fn(),
+  } as unknown as ConnectionRegistry;
   const logger = mockLogger();
 
   return { queue, registry, logger, consumer: new WsEventsConsumer(queue, registry, logger) };
@@ -57,6 +60,38 @@ describe('WsEventsConsumer', () => {
       ['ana', 'bruno'],
       JSON.stringify({ type: 'chat.created', data: { chat: { id: 'c1' } } }),
     );
+  });
+
+  it('should notify the participants and close the sockets of a deactivated user', async () => {
+    const { registry, consumer } = makeConsumer();
+
+    await consumer.consume({
+      data: { participantIds: ['bruno'], user: { id: 'ana' } },
+      routingKey: 'user.deactivated',
+      attempt: 1,
+    });
+
+    expect(registry.send).toHaveBeenCalledWith(
+      ['bruno'],
+      JSON.stringify({ type: 'user.deactivated', data: { user: { id: 'ana' } } }),
+    );
+    expect(registry.close).toHaveBeenCalledWith(
+      'ana',
+      USER_DEACTIVATED_CLOSE_CODE,
+      'Usuário desativado',
+    );
+  });
+
+  it('should not close sockets for other events', async () => {
+    const { registry, consumer } = makeConsumer();
+
+    await consumer.consume({
+      data: { participantIds: ['ana'], chat: { id: 'c1' } },
+      routingKey: 'chat.created',
+      attempt: 1,
+    });
+
+    expect(registry.close).not.toHaveBeenCalled();
   });
 
   it('should discard an event without participantIds', async () => {

@@ -5,8 +5,11 @@ import {
   QueueMessage,
 } from '@/infra/queue/queue-provider.interface';
 import { ILogger } from '@/infra/logger/logger.interface';
-import { Exchange, QueueName } from '@/shared/enums/queue/queue.enum';
+import { Exchange, QueueName, RoutingKey } from '@/shared/enums/queue/queue.enum';
+import { UserDeactivatedEvent } from '@/modules/users/event/user-deactivated.event';
 import { ConnectionRegistry } from './connection-registry';
+
+export const USER_DEACTIVATED_CLOSE_CODE = 4003;
 
 export type WsEvent = {
   type: string;
@@ -63,5 +66,11 @@ export class WsEventsConsumer implements IQueueConsumer {
     const sent = this.registry.send(delivery.userIds, JSON.stringify(delivery.event));
 
     this.logger.debug('Event delivered', { routingKey, sent });
+
+    if (routingKey === RoutingKey.USER_DEACTIVATED) {
+      const { user } = data as UserDeactivatedEvent;
+
+      this.registry.close(user.id, USER_DEACTIVATED_CLOSE_CODE, 'Usuário desativado');
+    }
   }
 }
