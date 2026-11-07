@@ -55,7 +55,7 @@ export async function applyLastMessage(
 ) {
   const preview = {
     ...lastMessage,
-    content: lastMessage.content.slice(0, LAST_MESSAGE_PREVIEW_LENGTH),
+    content: lastMessage.content?.slice(0, LAST_MESSAGE_PREVIEW_LENGTH) ?? null,
   };
   const current = findListItem(queryClient, chatId);
 

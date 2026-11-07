@@ -14,7 +14,7 @@ export interface Chat {
 
 export interface LastMessage {
   id: string;
-  content: string;
+  content: string | null;
   sender: { id: string; name: string };
 }
 

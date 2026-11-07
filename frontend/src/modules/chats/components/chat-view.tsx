@@ -54,7 +54,7 @@ export function ChatView() {
         isGroup={chat.isGroup}
         currentUserId={userId}
         scrollRef={scrollRef}
-        onRetry={(message) => message.clientId && retry(message.clientId, message.content)}
+        onRetry={(message) => message.clientId && retry(message.clientId, message.content ?? '')}
         onDiscard={(message) => message.clientId && discard(message.clientId)}
       />
       <MessageComposer readOnly={chat.readOnly} onSend={handleSend} />
