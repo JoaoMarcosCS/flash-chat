@@ -2,7 +2,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import supertest from 'supertest';
 import { app } from '@/infra/http/index';
 import { ChatRepository } from '@/modules/chats/repository/chat.repository';
-import { bearer, createUser, deactivate, sendMessage, TestUser } from './chat-fixtures';
+import {
+  bearer,
+  createUser,
+  deactivate,
+  deleteMessage,
+  sendMessage,
+  TestUser,
+} from './chat-fixtures';
 
 const list = (user: TestUser, query: Record<string, string | number> = {}) =>
   supertest(app).get('/api/v1/chats').query(query).set('Authorization', bearer(user));
@@ -71,6 +78,20 @@ describe('GET /api/v1/chats (integração)', () => {
       },
       { id: group, isGroup: true, displayName: 'Viagem', readOnly: false, lastMessage: null },
     ]);
+  });
+
+  it('should keep the position of a chat whose last message was deleted', async () => {
+    await deleteMessage(bruno, withBruno, messageId);
+
+    const response = await list(ana);
+
+    expect(response.body.data[0]).toEqual({
+      id: withBruno,
+      isGroup: false,
+      displayName: 'Bruno Lima',
+      readOnly: false,
+      lastMessage: { id: messageId, content: null, sender: { id: bruno.id, name: 'Bruno Lima' } },
+    });
   });
 
   it('should show the other participant name to each side of a direct chat', async () => {
