@@ -10,6 +10,7 @@ export enum MessageError {
   NOT_MESSAGE_SENDER = 'Somente quem enviou a mensagem pode alterá-la',
   MESSAGE_ALREADY_DELETED = 'Mensagem apagada',
   INVALID_CREDENTIALS = 'Credenciais inválidas',
+  INVALID_CURRENT_PASSWORD = 'Senha atual incorreta',
   INVALID_TOKEN = 'Token inválido',
   TOKEN_NOT_PROVIDED = 'Token não informado',
 }
