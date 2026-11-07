@@ -7,6 +7,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { formatListDate } from '@/lib/format-date';
 import { cn } from '@/lib/utils';
 import { getUuidV7Date } from '@/lib/uuid-v7-date';
+import { DELETED_MESSAGE_LABEL } from '@/modules/messages/display/message-display';
 
 interface ChatListItemProps {
   chat: ChatListItemData;
@@ -60,7 +61,12 @@ export function ChatListItem({ chat, currentUserId, active }: ChatListItemProps)
             fallback={<span className="italic">Nenhuma mensagem ainda</span>}
           >
             {getPreviewPrefix(chat, currentUserId)}
-            {lastMessage?.content}
+            <RenderIf
+              shouldRender={lastMessage?.content !== null}
+              fallback={<span className="italic">{DELETED_MESSAGE_LABEL}</span>}
+            >
+              {lastMessage?.content}
+            </RenderIf>
           </RenderIf>
         </p>
       </div>
