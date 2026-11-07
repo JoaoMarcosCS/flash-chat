@@ -8,6 +8,7 @@ export enum RoutingKey {
   MESSAGE_EDITED = 'message.edited',
   MESSAGE_DELETED = 'message.deleted',
   CHAT_CREATED = 'chat.created',
+  USER_DEACTIVATED = 'user.deactivated',
 }
 
 export enum QueueName {
