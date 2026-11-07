@@ -3,7 +3,15 @@ import supertest from 'supertest';
 import { v7 as uuidv7 } from 'uuid';
 import { app } from '@/infra/http/index';
 import { ChatRepository } from '@/modules/chats/repository/chat.repository';
-import { bearer, createUser, deactivate, sendMessage, TestUser } from '../chats/chat-fixtures';
+import {
+  bearer,
+  createUser,
+  deactivate,
+  deleteMessage,
+  patchMessage,
+  sendMessage,
+  TestUser,
+} from '../chats/chat-fixtures';
 
 const get = (user: TestUser, chatId: string, query: object = {}) =>
   supertest(app)
@@ -46,18 +54,38 @@ describe('GET /api/v1/chats/:id/messages (integração)', () => {
         {
           id: second,
           content: 'Olá',
+          contentStatus: 'original',
           createdAt: expect.any(String),
+          editedAt: null,
+          deletedAt: null,
           sender: { id: bruno.id, name: 'Bruno Lima' },
         },
         {
           id: first,
           content: 'Oi',
+          contentStatus: 'original',
           createdAt: expect.any(String),
+          editedAt: null,
+          deletedAt: null,
           sender: { id: ana.id, name: 'Ana Souza' },
         },
       ],
       nextCursor: null,
     });
+  });
+
+  it('should return edited and deleted messages', async () => {
+    const edited = await sendMessage(chatId, ana, 'Oi');
+    const deleted = await sendMessage(chatId, ana, 'Tchau');
+    await patchMessage(ana, chatId, edited, { content: 'Olá' });
+    await deleteMessage(ana, chatId, deleted);
+
+    const response = await get(bruno, chatId);
+
+    expect(response.body.data).toMatchObject([
+      { id: deleted, content: null, contentStatus: 'deleted', deletedAt: expect.any(String) },
+      { id: edited, content: 'Olá', contentStatus: 'edited', editedAt: expect.any(String) },
+    ]);
   });
 
   it('should paginate with limit and cursor', async () => {

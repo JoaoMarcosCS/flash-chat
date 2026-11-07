@@ -1,4 +1,6 @@
 import { v7 as uuidv7 } from 'uuid';
+import supertest from 'supertest';
+import { app } from '@/infra/http/index';
 import { AppDataSource } from '@/infra/database/data-source';
 import { ChatEntity } from '@/modules/chats/entity/chat.entity';
 import { MessageEntity } from '@/modules/messages/entity/message.entity';
@@ -52,6 +54,17 @@ export const sendMessage = async (chatId: string, sender: TestUser, content: str
 };
 
 export const bearer = (user: TestUser) => `Bearer ${user.token}`;
+
+export const patchMessage = (user: TestUser, chatId: string, id: string, body: object) =>
+  supertest(app)
+    .patch(`/api/v1/chats/${chatId}/messages/${id}`)
+    .set('Authorization', bearer(user))
+    .send(body);
+
+export const deleteMessage = (user: TestUser, chatId: string, id: string) =>
+  supertest(app)
+    .delete(`/api/v1/chats/${chatId}/messages/${id}`)
+    .set('Authorization', bearer(user));
 
 export const listenEvents = async (routingKey: RoutingKey) => {
   const connection = await connect({
