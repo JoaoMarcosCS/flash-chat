@@ -5,6 +5,8 @@ export enum Exchange {
 export enum RoutingKey {
   MESSAGE_PUBLISHED = 'message.published',
   MESSAGE_PERSISTED = 'message.persisted',
+  MESSAGE_EDITED = 'message.edited',
+  MESSAGE_DELETED = 'message.deleted',
   CHAT_CREATED = 'chat.created',
 }
 

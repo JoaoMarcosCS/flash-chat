@@ -1,7 +1,10 @@
+import { MessageDetails } from '../repository/message-repository.interface';
 import { ChatDetails, ChatParticipant } from '@/modules/chats/repository/chat-repository.interface';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
+import { ContentStatus } from '@/shared/enums/messages/content-status.enum';
 import { MessageError } from '@/shared/enums/erros.enum';
 import {
+  ConflictException,
   ForbiddenException,
   NotFoundException,
   UnauthorizedException,
@@ -28,4 +31,23 @@ export const ensureSenderCanWrite = (
   }
 
   return { chat, sender };
+};
+
+export const ensureSenderCanChange = (
+  message: MessageDetails | null,
+  userId: string,
+): MessageDetails => {
+  if (!message) {
+    throw new NotFoundException(MessageError.MESSAGE_NOT_FOUND);
+  }
+
+  if (message.senderId !== userId) {
+    throw new ForbiddenException(MessageError.NOT_MESSAGE_SENDER);
+  }
+
+  if (message.contentStatus === ContentStatus.DELETED) {
+    throw new ConflictException(MessageError.MESSAGE_ALREADY_DELETED);
+  }
+
+  return message;
 };
