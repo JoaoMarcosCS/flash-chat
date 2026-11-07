@@ -3,3 +3,7 @@ export interface PublicUser {
   name: string;
   nickname: string;
 }
+
+export interface UserProfile extends PublicUser {
+  email: string;
+}
