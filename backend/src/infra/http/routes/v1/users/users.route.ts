@@ -5,7 +5,7 @@ import { GetUserController } from '@/modules/users/usecase/get/get-user.controll
 import { UpdateUserController } from '@/modules/users/usecase/update/update-user.controller';
 import { DeactivateUserController } from '@/modules/users/usecase/deactivate/deactivate-user.controller';
 import { verifyToken } from '@/infra/http/middleware/auth';
-import { authLimiter } from '@/infra/http/security/rate-limit.config';
+import { authLimiter, currentPasswordLimiter } from '@/infra/http/security/rate-limit.config';
 
 const routes = Router();
 
@@ -18,7 +18,11 @@ const deactivateUserController = new DeactivateUserController();
 routes.post('/', authLimiter, (req, res) => createUserController.handle(req, res));
 routes.get('/', verifyToken, (req, res) => searchUsersController.handle(req, res));
 routes.get('/me', verifyToken, (req, res) => getUserController.handle(req, res));
-routes.patch('/me', verifyToken, (req, res) => updateUserController.handle(req, res));
-routes.delete('/me', verifyToken, (req, res) => deactivateUserController.handle(req, res));
+routes.patch('/me', verifyToken, currentPasswordLimiter, (req, res) =>
+  updateUserController.handle(req, res),
+);
+routes.delete('/me', verifyToken, currentPasswordLimiter, (req, res) =>
+  deactivateUserController.handle(req, res),
+);
 
 export { routes };
