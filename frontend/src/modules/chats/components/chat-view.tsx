@@ -52,6 +52,7 @@ export function ChatView() {
         key={chatId}
         chatId={chatId}
         isGroup={chat.isGroup}
+        readOnly={chat.readOnly}
         currentUserId={userId}
         scrollRef={scrollRef}
         onRetry={(message) => message.clientId && retry(message.clientId, message.content ?? '')}
