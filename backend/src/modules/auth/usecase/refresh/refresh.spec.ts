@@ -19,6 +19,9 @@ const user: PublicUser = {
 const mockRepository = (): IUserRepository => ({
   findBy: vi.fn().mockResolvedValue([user]),
   findByEmailWithPassword: vi.fn(),
+  findByIdWithPassword: vi.fn(),
+  findProfileById: vi.fn(),
+  update: vi.fn(),
   create: vi.fn(),
 });
 

@@ -79,4 +79,70 @@ describe('UserRepository (integração)', () => {
     await expect(promise).rejects.toBeInstanceOf(ConflictException);
     await expect(promise).rejects.toThrow(MessageError.NICKNAME_ALREADY_EXISTS);
   });
+
+  it('should update only the given columns and return the profile', async () => {
+    const repository = new UserRepository();
+    const { id } = await repository.create(payload);
+
+    const profile = await repository.update(id, { name: 'John Smith' });
+
+    expect(profile).toEqual({
+      id,
+      name: 'John Smith',
+      nickname: payload.nickname,
+      email: payload.email,
+    });
+  });
+
+  it('should throw ConflictException when the new e-mail belongs to a deactivated user', async () => {
+    const repository = new UserRepository();
+    const deactivated = await repository.create(payload);
+    await repository.update(deactivated.id, { status: UserStatus.DEACTIVATED });
+    const { id } = await repository.create({
+      ...payload,
+      nickname: 'jane.doe',
+      email: 'jane.doe@example.com',
+    });
+
+    const promise = repository.update(id, { email: 'JOHN.DOE@example.com' });
+
+    await expect(promise).rejects.toBeInstanceOf(ConflictException);
+    await expect(promise).rejects.toThrow(MessageError.EMAIL_ALREADY_EXISTS);
+  });
+
+  it('should throw ConflictException when the new nickname already exists ignoring case', async () => {
+    const repository = new UserRepository();
+    await repository.create(payload);
+    const { id } = await repository.create({
+      ...payload,
+      nickname: 'jane.doe',
+      email: 'jane.doe@example.com',
+    });
+
+    const promise = repository.update(id, { nickname: 'John.Doe' });
+
+    await expect(promise).rejects.toThrow(MessageError.NICKNAME_ALREADY_EXISTS);
+  });
+
+  it('should find the password and the profile only of active users', async () => {
+    const repository = new UserRepository();
+    const { id } = await repository.create(payload);
+
+    expect(await repository.findByIdWithPassword(id)).toMatchObject({
+      id,
+      email: payload.email,
+      password: payload.password,
+    });
+    expect(await repository.findProfileById(id)).toEqual({
+      id,
+      name: payload.name,
+      nickname: payload.nickname,
+      email: payload.email,
+    });
+
+    await repository.update(id, { status: UserStatus.DEACTIVATED });
+
+    expect(await repository.findByIdWithPassword(id)).toBeNull();
+    expect(await repository.findProfileById(id)).toBeNull();
+  });
 });

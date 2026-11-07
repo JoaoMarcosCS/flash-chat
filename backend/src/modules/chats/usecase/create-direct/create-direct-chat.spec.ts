@@ -55,6 +55,9 @@ const mockChatRepository = (): IChatRepository => ({
 const mockUserRepository = (): IUserRepository => ({
   findBy: vi.fn().mockResolvedValue([makeUser(userId), makeUser(participantId)]),
   findByEmailWithPassword: vi.fn(),
+  findByIdWithPassword: vi.fn(),
+  findProfileById: vi.fn(),
+  update: vi.fn(),
   create: vi.fn(),
 });
 

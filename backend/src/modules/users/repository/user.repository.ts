@@ -5,12 +5,16 @@ import {
   FindUsersByParams,
   IUserRepository,
   PublicUser,
+  UpdateUserData,
+  UserProfile,
 } from './user-repository.interface';
 import { AppDataSource } from '@/infra/database/data-source';
 import { UserEntity } from '../entity/user.entity';
 import { UserStatus } from '@/shared/enums/users/user-status.enum';
 import { MessageError } from '@/shared/enums/erros.enum';
 import { ConflictException } from '@/shared/errors/errors';
+
+const PROFILE_COLUMNS = ['u.id', 'u.name', 'u.nickname', 'u.email'];
 
 const SEARCH_VECTOR = `to_tsvector('simple', coalesce(u.name, '') || ' ' || coalesce(u.nickname, ''))`;
 
@@ -78,6 +82,47 @@ export class UserRepository implements IUserRepository {
       .where('lower(u.email) = lower(:email)', { email })
       .andWhere('u.status = :status', { status: UserStatus.ACTIVE })
       .getOne();
+  }
+
+  async findByIdWithPassword(id: string): Promise<UserEntity | null> {
+    return await this.repository
+      .createQueryBuilder('u')
+      .select([...PROFILE_COLUMNS, 'u.password'])
+      .where('u.id = :id', { id })
+      .andWhere('u.status = :status', { status: UserStatus.ACTIVE })
+      .getOne();
+  }
+
+  async findProfileById(id: string): Promise<UserProfile | null> {
+    return await this.repository
+      .createQueryBuilder('u')
+      .select(PROFILE_COLUMNS)
+      .where('u.id = :id', { id })
+      .andWhere('u.status = :status', { status: UserStatus.ACTIVE })
+      .getOne();
+  }
+
+  async update(id: string, data: UpdateUserData): Promise<UserProfile> {
+    try {
+      const { raw } = await this.repository
+        .createQueryBuilder()
+        .update(UserEntity)
+        .set(data)
+        .where('id = :id', { id })
+        .updateEntity(false)
+        .returning(['id', 'name', 'nickname', 'email'])
+        .execute();
+
+      return raw[0];
+    } catch (error) {
+      const conflict = getUniqueConflict(error);
+
+      if (conflict) {
+        throw new ConflictException(conflict);
+      }
+
+      throw error;
+    }
   }
 
   async create(data: CreateUserData): Promise<PublicUser> {

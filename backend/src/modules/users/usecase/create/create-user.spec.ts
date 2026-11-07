@@ -30,6 +30,9 @@ const existingUser = (overrides: Partial<PublicUser> = {}): PublicUser => ({
 const mockRepository = (): IUserRepository => ({
   findBy: vi.fn().mockResolvedValue([]),
   findByEmailWithPassword: vi.fn(),
+  findByIdWithPassword: vi.fn(),
+  findProfileById: vi.fn(),
+  update: vi.fn(),
   create: vi.fn().mockImplementation(async ({ name, nickname }: CreateUserData) => ({
     id: 'uuid-1',
     name,

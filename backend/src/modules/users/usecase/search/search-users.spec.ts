@@ -18,6 +18,9 @@ const userId = '0199b7a0-0000-7000-8000-000000000001';
 const mockRepository = (): IUserRepository => ({
   findBy: vi.fn().mockResolvedValue([]),
   findByEmailWithPassword: vi.fn(),
+  findByIdWithPassword: vi.fn(),
+  findProfileById: vi.fn(),
+  update: vi.fn(),
   create: vi.fn(),
 });
 
