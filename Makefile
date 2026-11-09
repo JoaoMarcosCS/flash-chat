@@ -20,7 +20,7 @@ migrate: db
 	cd backend && $(NODE) yarn migration:run
 
 seed: migrate
-	cd backend && $(NODE) yarn --silent seed
+	cd backend && $(NODE) yarn seed
 
 infra: seed
 	cd backend && docker compose up -d --wait redis rabbitmq
