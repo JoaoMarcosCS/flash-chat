@@ -17,7 +17,7 @@ db:
 	cd backend && docker compose up -d --wait postgres
 
 migrate: db
-	cd backend && $(NODE) yarn --silent migration:run
+	cd backend && $(NODE) yarn migration:run
 
 seed: migrate
 	cd backend && $(NODE) yarn --silent seed
