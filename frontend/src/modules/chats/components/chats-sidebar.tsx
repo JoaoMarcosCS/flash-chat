@@ -2,15 +2,22 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { CircleUserRound, Search, SquarePen, UserRoundPlus } from 'lucide-react';
+import { SquarePen, UserRoundPlus } from 'lucide-react';
 import type { ChatType } from '../interface/chat.interface';
 import { ChatList } from './chat-list';
-import { ChatTypeTabs } from './chat-type-tabs';
-import { buttonClassName } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { buttonVariants } from '@/components/ui/button';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInput,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { SEARCH_MAX_LENGTH, toSearchTerm } from '@/lib/search-term';
-import { LogoutButton } from '@/modules/auth/components/logout-button';
+import { cn } from '@/lib/utils';
 
 const SIDEBAR_CONTENT = {
   direct: {
@@ -31,57 +38,47 @@ const SIDEBAR_CONTENT = {
 
 interface ChatsSidebarProps {
   type: ChatType;
+  className?: string;
 }
 
-export function ChatsSidebar({ type }: ChatsSidebarProps) {
+export function ChatsSidebar({ type, className }: ChatsSidebarProps) {
   const [search, setSearch] = useState('');
   const term = useDebouncedValue(toSearchTerm(search));
   const { title, createLabel, createHref, CreateIcon, searchLabel } = SIDEBAR_CONTENT[type];
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between gap-2 px-5 pt-6 pb-4">
-        <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-foreground">{title}</h1>
-        <div className="flex items-center gap-1">
+    <Sidebar collapsible="none" className={cn('min-h-0 min-w-0 flex-1', className)}>
+      <SidebarHeader className="gap-3.5 border-b p-4">
+        <div className="flex w-full items-center gap-2">
+          <SidebarTrigger className="-ml-1 md:hidden" />
+          <h1 className="text-base font-medium text-foreground">{title}</h1>
           <Link
             href={createHref}
             aria-label={createLabel}
             title={createLabel}
-            className={buttonClassName({ variant: 'ghost', size: 'icon' })}
+            className={cn(buttonVariants({ variant: 'ghost', size: 'icon-sm' }), 'ml-auto')}
           >
-            <CreateIcon className="size-5" />
+            <CreateIcon />
           </Link>
-          <Link
-            href="/profile"
-            aria-label="Perfil"
-            title="Perfil"
-            className={buttonClassName({ variant: 'ghost', size: 'icon', className: 'md:hidden' })}
-          >
-            <CircleUserRound className="size-5" />
-          </Link>
-          <LogoutButton className="md:hidden" />
         </div>
-      </header>
-      <div className="px-5 pb-3 md:hidden">
-        <ChatTypeTabs active={type} />
-      </div>
-      <div className="px-5 pb-3">
-        <label className="relative block">
+        <label className="block">
           <span className="sr-only">{searchLabel}</span>
-          <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
+          <SidebarInput
             type="search"
             value={search}
             maxLength={SEARCH_MAX_LENGTH}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={`${searchLabel}...`}
-            className="pl-10"
           />
         </label>
-      </div>
-      <div className="flex-1 overflow-y-auto px-2 pb-4">
-        <ChatList type={type} search={term} />
-      </div>
-    </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup className="px-0 py-0">
+          <SidebarGroupContent>
+            <ChatList type={type} search={term} />
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
   );
 }

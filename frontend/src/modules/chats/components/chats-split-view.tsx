@@ -2,29 +2,29 @@
 
 import type { ReactNode } from 'react';
 import { useSelectedLayoutSegment } from 'next/navigation';
+import type { ChatType } from '../interface/chat.interface';
+import { ChatsSidebar } from './chats-sidebar';
+import { RenderIf } from '@/components/common/render-if';
 import { cn } from '@/lib/utils';
 
 interface ChatsSplitViewProps {
-  sidebar: ReactNode;
+  type: ChatType;
   children: ReactNode;
 }
 
-export function ChatsSplitView({ sidebar, children }: ChatsSplitViewProps) {
+export function ChatsSplitView({ type, children }: ChatsSplitViewProps) {
   const hasSelection = useSelectedLayoutSegment() !== null;
 
   return (
-    <div className="flex h-full min-h-0 flex-1">
-      <aside
-        className={cn(
-          'w-full shrink-0 border-r border-border bg-surface md:block md:w-[360px]',
-          hasSelection ? 'hidden' : 'block',
-        )}
+    <>
+      <RenderIf shouldRender={!hasSelection}>
+        <ChatsSidebar type={type} className="w-full md:hidden" />
+      </RenderIf>
+      <section
+        className={cn('min-h-0 min-w-0 flex-1 flex-col', hasSelection ? 'flex' : 'hidden md:flex')}
       >
-        {sidebar}
-      </aside>
-      <section className={cn('min-w-0 flex-1 flex-col md:flex', hasSelection ? 'flex' : 'hidden')}>
         {children}
       </section>
-    </div>
+    </>
   );
 }

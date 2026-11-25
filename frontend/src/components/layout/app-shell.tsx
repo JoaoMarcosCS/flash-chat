@@ -1,17 +1,29 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CircleUserRound, MessageSquareText, Users } from 'lucide-react';
-import { Brand } from './brand';
+import { CircleUserRound, MessageSquareText, Users, Zap } from 'lucide-react';
 import { RenderIf } from '@/components/common/render-if';
 import { RenderItems } from '@/components/common/render-items';
-import { Avatar } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
-import { LogoutButton } from '@/modules/auth/components/logout-button';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  useSidebar,
+} from '@/components/ui/sidebar';
+import { NavUser } from '@/modules/auth/components/nav-user';
+import { ChatsSidebar } from '@/modules/chats/components/chats-sidebar';
+import type { ChatType } from '@/modules/chats/interface/chat.interface';
 import { ConnectionIndicator } from '@/modules/realtime/components/connection-indicator';
-import { useSessionStore } from '@/stores/session.store';
 
 const NAV_ITEMS = [
   { href: '/chats', label: 'Conversas', Icon: MessageSquareText },
@@ -19,56 +31,108 @@ const NAV_ITEMS = [
   { href: '/profile', label: 'Perfil', Icon: CircleUserRound },
 ];
 
+const SIDEBAR_STYLE = { '--sidebar-width': '380px' } as CSSProperties;
+
+function isActive(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getChatType(pathname: string): ChatType | null {
+  if (isActive(pathname, '/chats')) return 'direct';
+  if (isActive(pathname, '/groups')) return 'group';
+  return null;
+}
+
+interface NavRailProps {
+  pathname: string;
+  onNavigate: () => void;
+}
+
+function NavRail({ pathname, onNavigate }: NavRailProps) {
+  const { setOpenMobile } = useSidebar();
+
+  const navigate = () => {
+    onNavigate();
+    setOpenMobile(false);
+  };
+
+  return (
+    <Sidebar
+      collapsible="none"
+      className="w-full border-r md:w-[calc(var(--sidebar-width-icon)+1px)]!"
+    >
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              size="lg"
+              className="md:h-8 md:p-0"
+              render={<Link href="/chats" onClick={navigate} />}
+            >
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <Zap className="size-4 fill-current" strokeWidth={1.5} />
+              </div>
+              <span className="truncate font-semibold tracking-[-0.02em]">Flash Chat</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent className="px-1.5 md:px-0">
+            <SidebarMenu className="gap-2.5">
+              <RenderItems items={NAV_ITEMS} getKey={(item) => item.href}>
+                {({ href, label, Icon }) => (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      tooltip={{ children: label, hidden: false }}
+                      isActive={isActive(pathname, href)}
+                      className="px-2.5 md:px-2"
+                      render={<Link href={href} onClick={navigate} />}
+                    >
+                      <Icon />
+                      <span>{label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+              </RenderItems>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <NavUser />
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
+
 interface AppShellProps {
   children: ReactNode;
 }
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
-  const user = useSessionStore((state) => state.user);
+  const chatType = getChatType(pathname);
+  const [inboxOpen, setInboxOpen] = useState(true);
 
   return (
-    <div className="flex h-dvh overflow-hidden">
-      <nav className="hidden w-[72px] shrink-0 flex-col items-center gap-8 border-r border-border bg-surface py-5 md:flex">
-        <Brand showName={false} />
-        <div className="flex w-full flex-col gap-2">
-          <RenderItems items={NAV_ITEMS} getKey={(item) => item.href}>
-            {({ href, label, Icon }) => {
-              const active = pathname === href || pathname.startsWith(`${href}/`);
-
-              return (
-                <Link
-                  href={href}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'relative flex w-full flex-col items-center gap-1 py-2 text-[11px] font-medium transition-colors duration-150',
-                    active
-                      ? 'text-foreground before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:bg-inverse'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  <Icon className="size-5" strokeWidth={1.75} />
-                  {label}
-                </Link>
-              );
-            }}
-          </RenderItems>
-        </div>
-        <div className="mt-auto flex flex-col items-center gap-2">
-          <RenderIf shouldRender={user}>
-            {user && (
-              <span title={`${user.name} (@${user.nickname})`}>
-                <Avatar id={user.id} name={user.name} />
-              </span>
-            )}
-          </RenderIf>
-          <LogoutButton />
-        </div>
-      </nav>
-      <div className="flex min-w-0 flex-1 flex-col">
+    <SidebarProvider
+      open={chatType !== null && inboxOpen}
+      onOpenChange={setInboxOpen}
+      style={SIDEBAR_STYLE}
+      className="h-dvh min-h-0 overflow-hidden"
+    >
+      <Sidebar collapsible="icon" className="overflow-hidden *:data-[sidebar=sidebar]:flex-row">
+        <NavRail pathname={pathname} onNavigate={() => setInboxOpen(true)} />
+        <RenderIf shouldRender={chatType}>
+          {chatType && <ChatsSidebar key={chatType} type={chatType} className="hidden md:flex" />}
+        </RenderIf>
+      </Sidebar>
+      <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
         <ConnectionIndicator />
         {children}
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

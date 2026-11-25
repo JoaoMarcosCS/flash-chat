@@ -10,8 +10,8 @@ import { EmptyState } from '@/components/common/empty-state';
 import { InfiniteScrollTrigger } from '@/components/common/infinite-scroll-trigger';
 import { RenderIf } from '@/components/common/render-if';
 import { RenderItems } from '@/components/common/render-items';
-import { buttonClassName } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
+import { buttonVariants } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getApiErrorMessage } from '@/lib/get-api-error-message';
 import { flattenPages } from '@/lib/paginated';
 import { useSessionStore } from '@/stores/session.store';
@@ -35,6 +35,23 @@ const EMPTY_STATES = {
   },
 };
 
+const SKELETON_ROWS = Array.from({ length: 8 }, (_, index) => index);
+
+function ChatListItemSkeleton() {
+  return (
+    <div className="flex items-center gap-3 p-4">
+      <Skeleton className="size-10 shrink-0 rounded-full" />
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="ml-auto h-3 w-10" />
+        </div>
+        <Skeleton className="h-3 w-full" />
+      </div>
+    </div>
+  );
+}
+
 interface ChatListProps {
   type: ChatType;
   search: string;
@@ -49,8 +66,10 @@ export function ChatList({ type, search }: ChatListProps) {
 
   if (isPending) {
     return (
-      <div className="flex justify-center py-10">
-        <Spinner />
+      <div aria-busy aria-label="Carregando conversas" className="flex flex-col divide-y">
+        <RenderItems items={SKELETON_ROWS} getKey={(row) => row}>
+          {() => <ChatListItemSkeleton />}
+        </RenderItems>
       </div>
     );
   }
@@ -61,7 +80,7 @@ export function ChatList({ type, search }: ChatListProps) {
 
   return (
     <>
-      <ul className="flex flex-col gap-0.5">
+      <ul className="flex flex-col divide-y">
         <RenderItems
           items={flattenPages(data)}
           getKey={(chat) => chat.id}
@@ -76,7 +95,7 @@ export function ChatList({ type, search }: ChatListProps) {
                   action={
                     <Link
                       href={emptyState.actionHref}
-                      className={buttonClassName({ variant: 'soft', size: 'sm' })}
+                      className={buttonVariants({ variant: 'secondary' })}
                     >
                       {emptyState.actionLabel}
                     </Link>
@@ -99,6 +118,7 @@ export function ChatList({ type, search }: ChatListProps) {
         hasNextPage={hasNextPage}
         isFetching={isFetchingNextPage}
         onLoadMore={fetchNextPage}
+        skeleton={<ChatListItemSkeleton />}
       />
     </>
   );
