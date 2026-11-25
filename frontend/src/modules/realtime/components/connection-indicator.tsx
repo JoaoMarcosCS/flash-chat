@@ -1,9 +1,8 @@
 'use client';
 
-import { WifiOff } from 'lucide-react';
+import { Wifi, WifiOff } from 'lucide-react';
 import { useConnectionStore } from '../store/connection.store';
 import { RenderIf } from '@/components/common/render-if';
-import { Spinner } from '@/components/ui/spinner';
 
 export function ConnectionIndicator() {
   const status = useConnectionStore((state) => state.status);
@@ -18,7 +17,7 @@ export function ConnectionIndicator() {
           shouldRender={status === 'connecting'}
           fallback={<WifiOff className="size-3.5" />}
         >
-          <Spinner className="size-3.5" />
+          <Wifi className="size-3.5 animate-pulse" />
         </RenderIf>
         {status === 'connecting' ? 'Conectando...' : 'Sem conexão, tentando novamente'}
       </div>

@@ -5,17 +5,36 @@ import { DeactivateUserSection } from './deactivate-user-section';
 import { ProfileForm } from './profile-form';
 import { FormError } from '@/components/common/form-error';
 import { RenderIf } from '@/components/common/render-if';
+import { RenderItems } from '@/components/common/render-items';
 import { PanelHeader } from '@/components/layout/panel-header';
-import { Spinner } from '@/components/ui/spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getApiErrorMessage } from '@/lib/get-api-error-message';
+
+const FIELD_ROWS = [1, 2, 3, 4];
+
+function ProfileFormSkeleton() {
+  return (
+    <div aria-busy aria-label="Carregando perfil" className="flex flex-col gap-5">
+      <RenderItems items={FIELD_ROWS} getKey={(row) => row}>
+        {() => (
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        )}
+      </RenderItems>
+      <Skeleton className="mt-2 h-8 w-32" />
+    </div>
+  );
+}
 
 export function ProfileView() {
   const query = useProfileQuery();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <PanelHeader>
-        <h2 className="text-lg font-semibold text-foreground">Perfil</h2>
+      <PanelHeader showSidebarTrigger={false}>
+        <h2 className="text-base font-semibold text-foreground">Perfil</h2>
       </PanelHeader>
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-md flex-col gap-10 px-4 py-6 md:px-6">
@@ -26,9 +45,7 @@ export function ProfileView() {
             shouldRender={query.data}
             fallback={
               <RenderIf shouldRender={query.isPending}>
-                <div className="flex justify-center py-10">
-                  <Spinner className="size-7" />
-                </div>
+                <ProfileFormSkeleton />
               </RenderIf>
             }
           >
