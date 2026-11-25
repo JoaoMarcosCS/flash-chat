@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { Users } from 'lucide-react';
 import { useCreateDirectChatMutation } from '../hooks/use-create-direct-chat-mutation';
 import { PanelHeader } from '@/components/layout/panel-header';
-import { buttonClassName } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Spinner } from '@/components/ui/spinner';
 import { RenderIf } from '@/components/common/render-if';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getApiErrorMessage } from '@/lib/get-api-error-message';
 import { FormError } from '@/components/common/form-error';
 import { UserSearch } from '@/modules/users/components/user-search';
@@ -29,15 +29,15 @@ export function NewChatView() {
     <div className="flex min-h-0 flex-1 flex-col">
       <PanelHeader
         actions={
-          <Link href="/groups/new" className={buttonClassName({ variant: 'soft', size: 'sm' })}>
-            <Users className="size-4" />
+          <Link href="/groups/new" className={buttonVariants({ variant: 'secondary' })}>
+            <Users />
             Novo grupo
           </Link>
         }
       >
-        <h2 className="text-lg font-semibold text-foreground">Nova conversa</h2>
+        <h2 className="text-base font-semibold text-foreground">Nova conversa</h2>
         <RenderIf shouldRender={busy}>
-          <Spinner />
+          <Skeleton aria-label="Iniciando conversa" className="h-4 w-24" />
         </RenderIf>
       </PanelHeader>
       <RenderIf shouldRender={mutation.isError}>

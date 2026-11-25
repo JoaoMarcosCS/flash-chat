@@ -5,11 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { CurrentPasswordSchema, type CurrentPasswordDTO } from '../schema/update-profile.schema';
 import { FormError } from '@/components/common/form-error';
-import { RenderIf } from '@/components/common/render-if';
 import { Button } from '@/components/ui/button';
-import { Field } from '@/components/ui/field';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { PasswordInput } from '@/components/ui/password-input';
-import { Spinner } from '@/components/ui/spinner';
 
 interface CurrentPasswordDialogProps {
   open: boolean;
@@ -77,23 +75,22 @@ export function CurrentPasswordDialog({
           <div className="text-sm text-muted-foreground">{description}</div>
         </div>
         <FormError message={error} />
-        <Field id={`${id}-password`} label="Senha atual" error={errors.currentPassword?.message}>
+        <Field data-invalid={!!errors.currentPassword}>
+          <FieldLabel htmlFor={`${id}-password`}>Senha atual</FieldLabel>
           <PasswordInput
             id={`${id}-password`}
             autoComplete="current-password"
             aria-invalid={!!errors.currentPassword}
-            aria-describedby={`${id}-password-error`}
             {...form.register('currentPassword')}
           />
+          <FieldError errors={[errors.currentPassword]} />
         </Field>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" disabled={isPending} onClick={cancel}>
+          <Button variant="outline" disabled={isPending} onClick={cancel}>
             Cancelar
           </Button>
-          <Button type="submit" size="sm" disabled={isPending}>
-            <RenderIf shouldRender={isPending} fallback={confirmLabel}>
-              <Spinner className="text-inverse-foreground" />
-            </RenderIf>
+          <Button type="submit" disabled={isPending}>
+            {isPending ? 'Confirmando...' : confirmLabel}
           </Button>
         </div>
       </form>

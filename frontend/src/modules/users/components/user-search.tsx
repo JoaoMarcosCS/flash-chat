@@ -7,9 +7,9 @@ import type { PublicUser } from '../interface/user.interface';
 import { EmptyState } from '@/components/common/empty-state';
 import { InfiniteScrollTrigger } from '@/components/common/infinite-scroll-trigger';
 import { RenderItems } from '@/components/common/render-items';
-import { Avatar } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
+import { UserAvatar } from '@/components/common/user-avatar';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { getApiErrorMessage } from '@/lib/get-api-error-message';
 import { flattenPages } from '@/lib/paginated';
@@ -21,6 +21,20 @@ interface UserSearchProps {
   isSelected?: (user: PublicUser) => boolean;
   isDisabled?: (user: PublicUser) => boolean;
   trailing?: (user: PublicUser) => ReactNode;
+}
+
+const SKELETON_ROWS = [1, 2, 3, 4, 5];
+
+function UserRowSkeleton() {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5">
+      <Skeleton className="size-10 rounded-full" />
+      <div className="flex flex-1 flex-col gap-1.5">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-3 w-24" />
+      </div>
+    </div>
+  );
 }
 
 export function UserSearch({ onSelect, isSelected, isDisabled, trailing }: UserSearchProps) {
@@ -42,8 +56,10 @@ export function UserSearch({ onSelect, isSelected, isDisabled, trailing }: UserS
     if (isError) return <EmptyState icon={CircleAlert} title={getApiErrorMessage(error)} />;
     if (!data && isFetching) {
       return (
-        <div className="flex justify-center py-10">
-          <Spinner />
+        <div aria-busy aria-label="Buscando usuários" className="flex flex-col gap-0.5">
+          <RenderItems items={SKELETON_ROWS} getKey={(row) => row}>
+            {() => <UserRowSkeleton />}
+          </RenderItems>
         </div>
       );
     }
@@ -68,7 +84,7 @@ export function UserSearch({ onSelect, isSelected, isDisabled, trailing }: UserS
                     isSelected?.(user) ? 'bg-muted' : 'hover:bg-muted/60',
                   )}
                 >
-                  <Avatar id={user.id} name={user.name} />
+                  <UserAvatar id={user.id} name={user.name} size="lg" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium text-foreground">{user.name}</span>
                     <span className="block truncate text-sm text-muted-foreground">
@@ -85,6 +101,7 @@ export function UserSearch({ onSelect, isSelected, isDisabled, trailing }: UserS
           hasNextPage={hasNextPage}
           isFetching={isFetchingNextPage}
           onLoadMore={fetchNextPage}
+          skeleton={<UserRowSkeleton />}
         />
       </>
     );
@@ -93,19 +110,22 @@ export function UserSearch({ onSelect, isSelected, isDisabled, trailing }: UserS
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="px-4 pt-4 pb-3 md:px-6">
-        <label className="relative block">
+        <label className="block">
           <span className="sr-only">Buscar usuários</span>
-          <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            autoFocus
-            value={search}
-            maxLength={SEARCH_MAX_LENGTH}
-            onChange={(event) => setSearch(event.target.value)}
-            onKeyDown={(event) => event.key === 'Enter' && event.preventDefault()}
-            placeholder="Buscar por nome ou Nickname..."
-            className="pl-10"
-          />
+          <InputGroup className="bg-card">
+            <InputGroupInput
+              type="search"
+              autoFocus
+              value={search}
+              maxLength={SEARCH_MAX_LENGTH}
+              onChange={(event) => setSearch(event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && event.preventDefault()}
+              placeholder="Buscar por nome ou Nickname..."
+            />
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+          </InputGroup>
         </label>
       </div>
       <div className="flex flex-1 flex-col overflow-y-auto px-2 pb-4 md:px-4">

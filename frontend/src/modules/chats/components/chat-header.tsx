@@ -7,8 +7,8 @@ import {
 } from '../display/chat-display';
 import type { Chat } from '../interface/chat.interface';
 import { RenderIf } from '@/components/common/render-if';
+import { UserAvatar } from '@/components/common/user-avatar';
 import { PanelHeader } from '@/components/layout/panel-header';
-import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
 interface ChatHeaderProps {
@@ -43,16 +43,16 @@ export function ChatHeader({
           aria-controls="participants-panel"
           onClick={onToggleParticipants}
         >
-          <RenderIf shouldRender={chat.isGroup} fallback={<Info className="size-5" />}>
-            <Users className="size-5" />
+          <RenderIf shouldRender={chat.isGroup} fallback={<Info />}>
+            <Users />
           </RenderIf>
         </Button>
       }
     >
-      <Avatar id={chat.id} name={displayName} isGroup={chat.isGroup} size="lg" />
+      <UserAvatar id={chat.id} name={displayName} isGroup={chat.isGroup} size="lg" />
       <div className="min-w-0">
-        <h2 className="truncate text-lg font-semibold text-foreground">{displayName}</h2>
-        <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
+        <h2 className="truncate text-base font-semibold text-foreground">{displayName}</h2>
+        <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
       </div>
     </PanelHeader>
   );

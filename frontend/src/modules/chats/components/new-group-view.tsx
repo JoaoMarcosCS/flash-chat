@@ -12,9 +12,8 @@ import { RenderItems } from '@/components/common/render-items';
 import { PanelHeader } from '@/components/layout/panel-header';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Field } from '@/components/ui/field';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { FormError } from '@/components/common/form-error';
 import { UserSearch } from '@/modules/users/components/user-search';
@@ -48,26 +47,25 @@ export function NewGroupView() {
       <PanelHeader
         backHref="/groups"
         actions={
-          <Button type="submit" size="sm" disabled={!canSubmit || isPending}>
-            <RenderIf shouldRender={isPending} fallback="Criar grupo">
-              <Spinner className="text-inverse-foreground" />
-            </RenderIf>
+          <Button type="submit" disabled={!canSubmit || isPending}>
+            {isPending ? 'Criando...' : 'Criar grupo'}
           </Button>
         }
       >
-        <h2 className="text-lg font-semibold text-foreground">Novo grupo</h2>
+        <h2 className="text-base font-semibold text-foreground">Novo grupo</h2>
       </PanelHeader>
       <div className="flex flex-col gap-4 border-b border-border px-4 py-4 md:px-6">
         <FormError message={apiError ?? errors.participantIds?.message ?? null} />
-        <Field id="title" label="Nome do grupo" error={errors.title?.message}>
+        <Field data-invalid={!!errors.title}>
+          <FieldLabel htmlFor="title">Nome do grupo</FieldLabel>
           <Input
             id="title"
             maxLength={GROUP_TITLE_MAX_LENGTH}
             aria-invalid={!!errors.title}
-            aria-describedby="title-error"
             className="bg-surface"
             {...form.register('title')}
           />
+          <FieldError errors={[errors.title]} />
         </Field>
         <div className="flex flex-col gap-2">
           <p aria-live="polite" className="px-1 text-sm text-muted-foreground">

@@ -50,10 +50,10 @@ export function ConfirmDialog({
           <div className="text-sm text-muted-foreground">{description}</div>
         </div>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={onCancel}>
+          <Button variant="outline" onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button size="sm" autoFocus onClick={onConfirm}>
+          <Button autoFocus onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </div>

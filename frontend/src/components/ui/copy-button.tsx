@@ -33,11 +33,11 @@ export function CopyButton({ value, label }: CopyButtonProps) {
   return (
     <Button
       variant="ghost"
-      size="icon-sm"
+      size="icon-xs"
       aria-label={copied ? 'Copiado' : label}
       title={label}
       onClick={copy}
-      className="size-7 text-muted-foreground hover:text-foreground"
+      className="text-muted-foreground hover:text-foreground"
     >
       <RenderIf shouldRender={copied} fallback={<Copy className="size-3.5" />}>
         <Check className="size-3.5 text-foreground" />

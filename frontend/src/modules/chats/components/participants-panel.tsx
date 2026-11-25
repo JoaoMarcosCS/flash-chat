@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import type { Chat } from '../interface/chat.interface';
 import { RenderIf } from '@/components/common/render-if';
 import { RenderItems } from '@/components/common/render-items';
-import { Avatar } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/common/user-avatar';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 
@@ -49,7 +49,7 @@ export function ParticipantsPanel({ chat, currentUserId, onClose }: Participants
           {title}
         </h3>
         <Button ref={closeRef} variant="ghost" size="icon" aria-label="Fechar" onClick={onClose}>
-          <X className="size-5" />
+          <X />
         </Button>
       </header>
       <ul className="flex-1 overflow-y-auto px-3 pb-4">
@@ -59,7 +59,7 @@ export function ParticipantsPanel({ chat, currentUserId, onClose }: Participants
 
             return (
               <li className="flex items-center gap-3 rounded-lg px-2 py-2">
-                <Avatar id={participant.id} name={participant.name} />
+                <UserAvatar id={participant.id} name={participant.name} size="lg" />
                 <div className="min-w-0 flex-1">
                   <div className="flex min-w-0 items-center gap-0.5">
                     <p className="truncate font-medium text-foreground">
@@ -70,7 +70,9 @@ export function ParticipantsPanel({ chat, currentUserId, onClose }: Participants
                     </RenderIf>
                   </div>
                   <div className="flex min-w-0 items-center gap-0.5">
-                    <p className="truncate text-sm text-muted-foreground">@{participant.nickname}</p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      @{participant.nickname}
+                    </p>
                     <RenderIf shouldRender={!isCurrentUser}>
                       <CopyButton value={participant.nickname} label="Copiar Nickname" />
                     </RenderIf>
