@@ -1,10 +1,17 @@
 'use client';
 
 import { useState, type FormEvent, type KeyboardEvent } from 'react';
-import { Lock, SendHorizontal } from 'lucide-react';
+import { ArrowUp, Lock } from 'lucide-react';
 import { MESSAGE_COUNTER_THRESHOLD, MESSAGE_MAX_LENGTH } from '../schema/send-message.schema';
 import { RenderIf } from '@/components/common/render-if';
-import { Button } from '@/components/ui/button';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupText,
+  InputGroupTextarea,
+} from '@/components/ui/input-group';
+import { useMessageScroller } from '@/components/ui/message-scroller';
 
 interface MessageComposerProps {
   readOnly: boolean;
@@ -12,6 +19,7 @@ interface MessageComposerProps {
 }
 
 export function MessageComposer({ readOnly, onSend }: MessageComposerProps) {
+  const { scrollToEnd } = useMessageScroller();
   const [content, setContent] = useState('');
   const trimmed = content.trim();
 
@@ -20,6 +28,7 @@ export function MessageComposer({ readOnly, onSend }: MessageComposerProps) {
     if (!trimmed) return;
     onSend(trimmed);
     setContent('');
+    scrollToEnd();
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -28,7 +37,7 @@ export function MessageComposer({ readOnly, onSend }: MessageComposerProps) {
 
   if (readOnly) {
     return (
-      <div className="flex items-center justify-center gap-2 border-t border-border bg-surface px-4 py-5 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center gap-2 border-t bg-surface px-4 py-5 text-sm text-muted-foreground">
         <Lock className="size-4" />
         Somente leitura: a conta da outra pessoa foi desativada.
       </div>
@@ -36,15 +45,12 @@ export function MessageComposer({ readOnly, onSend }: MessageComposerProps) {
   }
 
   return (
-    <form
-      onSubmit={submit}
-      className="flex items-end gap-2 border-t border-border bg-surface px-3 py-3 md:px-6"
-    >
-      <div className="flex min-h-11 flex-1 flex-col justify-center rounded-[22px] border border-border bg-surface px-4 py-2.5 transition-colors duration-150 focus-within:border-foreground">
+    <form onSubmit={submit} className="shrink-0 px-4 pt-2 pb-4 md:px-8">
+      <InputGroup className="bg-card has-disabled:bg-card has-disabled:opacity-100">
         <label htmlFor="message" className="sr-only">
           Mensagem
         </label>
-        <textarea
+        <InputGroupTextarea
           id="message"
           rows={1}
           value={content}
@@ -52,17 +58,26 @@ export function MessageComposer({ readOnly, onSend }: MessageComposerProps) {
           onChange={(event) => setContent(event.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Digite uma mensagem..."
-          className="field-sizing-content max-h-40 resize-none bg-transparent text-[15px] leading-snug text-foreground outline-none placeholder:text-muted-foreground"
+          className="max-h-40 min-h-14 text-[15px]"
         />
-        <RenderIf shouldRender={content.length >= MESSAGE_COUNTER_THRESHOLD}>
-          <span className="self-end text-xs text-muted-foreground">
-            {content.length}/{MESSAGE_MAX_LENGTH}
-          </span>
-        </RenderIf>
-      </div>
-      <Button type="submit" size="icon" aria-label="Enviar" disabled={!trimmed} className="size-11">
-        <SendHorizontal className="size-5" />
-      </Button>
+        <InputGroupAddon align="block-end" className="pt-1">
+          <RenderIf shouldRender={content.length >= MESSAGE_COUNTER_THRESHOLD}>
+            <InputGroupText className="text-xs tabular-nums">
+              {content.length}/{MESSAGE_MAX_LENGTH}
+            </InputGroupText>
+          </RenderIf>
+          <InputGroupButton
+            type="submit"
+            variant="default"
+            size="icon-sm"
+            aria-label="Enviar"
+            disabled={!trimmed}
+            className="ml-auto"
+          >
+            <ArrowUp />
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
     </form>
   );
 }
