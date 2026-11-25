@@ -3,6 +3,7 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react';
 import { MESSAGE_MAX_LENGTH } from '../schema/send-message.schema';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 
 interface MessageEditFormProps {
   initialContent: string;
@@ -32,11 +33,11 @@ export function MessageEditForm({
   };
 
   return (
-    <form onSubmit={submit} className="flex w-full flex-col gap-2">
+    <form onSubmit={submit} className="flex w-full max-w-[80%] flex-col gap-2 self-end">
       <label htmlFor="edit-message" className="sr-only">
         Editar mensagem
       </label>
-      <textarea
+      <Textarea
         id="edit-message"
         autoFocus
         value={content}
@@ -44,14 +45,14 @@ export function MessageEditForm({
         onChange={(event) => setContent(event.target.value)}
         onKeyDown={handleKeyDown}
         onFocus={(event) => event.target.setSelectionRange(content.length, content.length)}
-        className="field-sizing-content max-h-40 min-w-56 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-[15px] leading-snug text-foreground outline-none focus:border-foreground"
+        className="max-h-40 min-w-56 bg-card"
       />
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Cancelar
         </Button>
         <Button type="submit" size="sm" disabled={!trimmed || isSaving}>
-          Salvar
+          {isSaving ? 'Salvando...' : 'Salvar'}
         </Button>
       </div>
     </form>
