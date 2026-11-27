@@ -153,7 +153,7 @@ Trade-offs:
 
 ### Infraestrutura
 
-Docker Compose para Postgres, Redis, RabbitMQ e os três processos do backend, e Traefik para o deploy. A pipeline de testes do backend roda no GitHub Actions.
+Docker Compose para Postgres, Redis, RabbitMQ e os três processos do backend. Em produção, o tráfego chega pelo Traefik de borda compartilhado da VPS (repositório `proxy-dos-projetos`). A pipeline de testes do backend roda no GitHub Actions.
 
 ## Como rodar localmente
 
@@ -279,14 +279,15 @@ O `--frozen-lockfile` garante que a CI usa exatamente as versões do `yarn.lock`
 
 ## Deploy com Traefik
 
-Em produção, o Traefik (v3.7) ficaria na frente do backend como proxy reverso, configurado pelos labels do `backend/docker-compose.yml`:
+Em produção, o backend fica atrás do Traefik de borda da VPS, que é um projeto separado (`proxy-dos-projetos`) e atende todos os projetos da máquina. O flash-chat não sobe Traefik próprio:
 
-- Escuta nas portas 80 e 443 e emite os certificados HTTPS automaticamente pelo Let's Encrypt, guardados no volume `letsencrypt`.
-- Roteia pelo host: `api.flash-chat-backend.duckdns.org` vai para a API, e o mesmo host com o caminho `/ws` vai para o servidor WebSocket. O frontend fala com um único domínio, e o Traefik repassa o upgrade de conexão do WebSocket.
-- Aplica o middleware `security-headers` (definido em `backend/traefik/traefik_dynamic.yml`) nas duas rotas: HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` e `Permissions-Policy`.
-- O consumer de persistência, o Postgres, o Redis e o RabbitMQ não têm rota pública: só conversam pela rede interna do Docker.
+- A borda escuta nas portas 80 e 443 e emite os certificados HTTPS pelo Let's Encrypt.
+- A API e o servidor WebSocket entram na rede Docker `edge`, declarada no `backend/docker-compose.edge.yml`. A borda encontra os dois pelas labels do `backend/docker-compose.yml`.
+- Roteia pelo host: `flash-chat-backend.duckdns.org` vai para a API, e o mesmo host com o caminho `/ws` vai para o servidor WebSocket. O frontend fala com um único domínio, e o Traefik repassa o upgrade de conexão do WebSocket.
+- Aplica o middleware `security-headers`, definido na borda, nas duas rotas: HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` e `Permissions-Policy`.
+- O consumer de persistência, o Postgres, o Redis e o RabbitMQ não entram na rede `edge`: só conversam pela rede interna do projeto.
 
-O `make deploy` sobe a mesma cadeia do `make dev` (banco, migrations, seed, infraestrutura e serviços), acrescenta o Traefik e acompanha os logs.
+O `make deploy` sobe a mesma cadeia do `make dev` (banco, migrations, seed, infraestrutura e serviços), aplicando o `docker-compose.edge.yml`, e acompanha os logs. A borda precisa estar no ar antes, porque é ela que cria a rede `edge`. Localmente, o `make dev` não usa o override e não depende da borda.
 
 ## Monorepo agora, microsserviços em produção
 
