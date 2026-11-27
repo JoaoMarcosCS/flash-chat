@@ -129,7 +129,38 @@ services:
     container_name: flash-chat-persist-consumer
     command: ["node", "dist/infra/persist-consumer/server.js"]
 
+  traefik:
+    image: traefik:v3.7
+    container_name: flash-chat-traefik
+    restart: unless-stopped
+
+    command:
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--providers.file.filename=/etc/traefik/traefik_dynamic.yml'
+      - '--log.level=INFO'
+      - '--log.format=json'
+      - '--accesslog=true'
+      - '--accesslog.format=json'
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.web.http.redirections.entrypoint.to=websecure'
+      - '--entrypoints.web.http.redirections.entrypoint.scheme=https'
+      - '--entrypoints.websecure.address=:443'
+      - '--certificatesresolvers.letsencrypt.acme.tlschallenge=true'
+      - '--certificatesresolvers.letsencrypt.acme.email=jmcsjoaomarcos@gmail.com'
+      - '--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json'
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik_dynamic.yml:/etc/traefik/traefik_dynamic.yml:ro
+      - letsencrypt:/letsencrypt
+
 volumes:
   pgdata:
   redisdata:
   rabbitmqdata:
+  letsencrypt:

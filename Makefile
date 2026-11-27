@@ -5,13 +5,12 @@ export FORCE_COLOR := 1
 
 NODE := source $${NVM_DIR:-$$HOME/.nvm}/nvm.sh >/dev/null && nvm use >/dev/null &&
 
-.PHONY: dev deploy db migrate seed infra services logs front down
+.PHONY: dev deploy db migrate seed infra services traefik logs front down
 
 dev: services
 	@$(MAKE) --no-print-directory -j2 logs front
 
-deploy: infra
-	cd backend && docker compose -f docker-compose.yml -f docker-compose.edge.yml up -d --build --wait --remove-orphans api ws persist-consumer
+deploy: traefik
 	@$(MAKE) --no-print-directory logs
 
 db:
@@ -28,6 +27,9 @@ infra: seed
 
 services: infra
 	cd backend && docker compose up -d --build --wait api ws persist-consumer
+
+traefik: services
+	cd backend && docker compose up -d --wait traefik
 
 logs:
 	@cd backend && docker compose logs -f api ws persist-consumer
