@@ -1,0 +1,14 @@
+services:
+  api:
+    networks:
+      - default
+      - edge
+
+  ws:
+    networks:
+      - default
+      - edge
+
+networks:
+  edge:
+    external: true
