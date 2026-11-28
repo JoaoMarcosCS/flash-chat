@@ -282,6 +282,7 @@ O `--frozen-lockfile` garante que a CI usa exatamente as versões do `yarn.lock`
 Em produção, o Traefik (v3.7) fica na frente do backend como proxy reverso, configurado pelos labels do `backend/docker-compose.yml`. A VPS hospeda outros projetos, então quem escuta as portas 80 e 443 é o proxy-primario, do repositório `proxy-dos-projetos`. Ele roteia pelo domínio (SNI) em modo TLS passthrough, sem abrir o HTTPS, e envia o IP do cliente pelo PROXY protocol.
 
 - Não publica portas no host: entra na rede externa `proxy-primario` e escuta só na 443, aceitando o PROXY protocol apenas do IP fixo do proxy-primario (`10.250.0.10`).
+- Só considera os containers com a label `traefik.projeto=flash-chat`. O socket do Docker mostra os containers de todos os projetos da VPS, e sem esse filtro o Traefik tentaria rotear e emitir certificados para domínios que não são dele.
 - Emite e renova os próprios certificados HTTPS pelo Let's Encrypt (desafio TLS, que chega pela 443 através do passthrough), guardados no volume `letsencrypt`.
 - Roteia pelo host: `flash-chat-backend.duckdns.org` vai para a API, e o mesmo host com o caminho `/ws` vai para o servidor WebSocket. O frontend fala com um único domínio, e o Traefik repassa o upgrade de conexão do WebSocket.
 - Aplica o middleware `security-headers` (definido em `backend/traefik/traefik_dynamic.yml`) nas duas rotas: HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` e `Permissions-Policy`.
