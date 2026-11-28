@@ -142,25 +142,27 @@ services:
       - '--log.format=json'
       - '--accesslog=true'
       - '--accesslog.format=json'
-      - '--entrypoints.web.address=:80'
-      - '--entrypoints.web.http.redirections.entrypoint.to=websecure'
-      - '--entrypoints.web.http.redirections.entrypoint.scheme=https'
       - '--entrypoints.websecure.address=:443'
+      - '--entrypoints.websecure.proxyprotocol.trustedips=10.250.0.10/32'
       - '--certificatesresolvers.letsencrypt.acme.tlschallenge=true'
       - '--certificatesresolvers.letsencrypt.acme.email=jmcsjoaomarcos@gmail.com'
       - '--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json'
-
-    ports:
-      - "80:80"
-      - "443:443"
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik_dynamic.yml:/etc/traefik/traefik_dynamic.yml:ro
       - letsencrypt:/letsencrypt
 
+    networks:
+      - default
+      - proxy-primario
+
 volumes:
   pgdata:
   redisdata:
   rabbitmqdata:
   letsencrypt:
+
+networks:
+  proxy-primario:
+    external: true

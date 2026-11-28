@@ -279,14 +279,15 @@ O `--frozen-lockfile` garante que a CI usa exatamente as versões do `yarn.lock`
 
 ## Deploy com Traefik
 
-Em produção, o Traefik (v3.7) ficaria na frente do backend como proxy reverso, configurado pelos labels do `backend/docker-compose.yml`:
+Em produção, o Traefik (v3.7) fica na frente do backend como proxy reverso, configurado pelos labels do `backend/docker-compose.yml`. A VPS hospeda outros projetos, então quem escuta as portas 80 e 443 é o proxy-primario, do repositório `proxy-dos-projetos`. Ele roteia pelo domínio (SNI) em modo TLS passthrough, sem abrir o HTTPS, e envia o IP do cliente pelo PROXY protocol.
 
-- Escuta nas portas 80 e 443 e emite os certificados HTTPS automaticamente pelo Let's Encrypt, guardados no volume `letsencrypt`.
-- Roteia pelo host: `api.flash-chat-backend.duckdns.org` vai para a API, e o mesmo host com o caminho `/ws` vai para o servidor WebSocket. O frontend fala com um único domínio, e o Traefik repassa o upgrade de conexão do WebSocket.
+- Não publica portas no host: entra na rede externa `proxy-primario` e escuta só na 443, aceitando o PROXY protocol apenas do IP fixo do proxy-primario (`10.250.0.10`).
+- Emite e renova os próprios certificados HTTPS pelo Let's Encrypt (desafio TLS, que chega pela 443 através do passthrough), guardados no volume `letsencrypt`.
+- Roteia pelo host: `flash-chat-backend.duckdns.org` vai para a API, e o mesmo host com o caminho `/ws` vai para o servidor WebSocket. O frontend fala com um único domínio, e o Traefik repassa o upgrade de conexão do WebSocket.
 - Aplica o middleware `security-headers` (definido em `backend/traefik/traefik_dynamic.yml`) nas duas rotas: HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` e `Permissions-Policy`.
 - O consumer de persistência, o Postgres, o Redis e o RabbitMQ não têm rota pública: só conversam pela rede interna do Docker.
 
-O `make deploy` sobe a mesma cadeia do `make dev` (banco, migrations, seed, infraestrutura e serviços), acrescenta o Traefik e acompanha os logs.
+O `make deploy` sobe a mesma cadeia do `make dev` (banco, migrations, seed, infraestrutura e serviços), acrescenta o Traefik e acompanha os logs. O proxy-primario precisa estar no ar antes, porque é ele que cria a rede `proxy-primario`. O IP real do cliente chega ao Traefik pelo PROXY protocol e segue para o Express no `X-Forwarded-For`, por isso o `trust proxy` continua `1`.
 
 ## Monorepo agora, microsserviços em produção
 
